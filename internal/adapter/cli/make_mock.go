@@ -12,7 +12,7 @@ func newMakeMockCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:mock [interface-name]",
+		Use:   "arch:mock [interface-name]",
 		Short: "Scaffold interface mock implementation using Mockery directives for isolated unit tests",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

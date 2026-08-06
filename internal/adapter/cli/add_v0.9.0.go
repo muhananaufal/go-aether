@@ -12,7 +12,7 @@ func newAddLintCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:lint",
+		Use:   "infra:lint",
 		Short: "Set up linter rules (golangci-lint) and git pre-commit hooks",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
@@ -37,7 +37,7 @@ func newAddUOWCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Com
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:uow",
+		Use:   "db:uow",
 		Short: "Set up Unit of Work transactional orchestrator pattern",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
@@ -62,7 +62,7 @@ func newAddGraphQLCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:graphql",
+		Use:   "api:graphql",
 		Short: "Set up gqlgen GraphQL server with dataloader boilerplate",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
@@ -87,7 +87,7 @@ func newAddReadReplicaCommand(svc port.ScaffoldService, globals *globalFlags) *c
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:readreplica",
+		Use:   "db:readreplica",
 		Short: "Set up DB connection pool splitter for Primary-Write and Replica-Read",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
@@ -112,7 +112,7 @@ func newAddOpenAPICommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:openapi",
+		Use:   "api:openapi",
 		Short: "Set up Swagger OpenAPI docs generator middleware",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()

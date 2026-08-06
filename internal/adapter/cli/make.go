@@ -13,7 +13,7 @@ func newMakeModuleCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var hasCache, hasWorker, force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:module [module-name]",
+		Use:   "arch:module [module-name]",
 		Short: "Generate a complete vertical feature slice (Domain, Port, Service, Handler, Repo)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -45,7 +45,7 @@ func newMakeServiceCommand(svc port.ScaffoldService, globals *globalFlags) *cobr
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:service [module-name]",
+		Use:   "arch:service [module-name]",
 		Short: "Generate only the service layer component for a specific module",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -73,7 +73,7 @@ func newMakeHandlerCommand(svc port.ScaffoldService, globals *globalFlags) *cobr
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:handler [module-name]",
+		Use:   "arch:handler [module-name]",
 		Short: "Generate only the transport handler component for a specific module",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -101,7 +101,7 @@ func newMakeDomainCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:domain [module-name]",
+		Use:   "arch:domain [module-name]",
 		Short: "Generate only the domain layer entity for a specific module",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -128,7 +128,7 @@ func newMakePortCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:port [module-name]",
+		Use:   "arch:port [module-name]",
 		Short: "Generate only the port interface contract for a specific module",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -155,7 +155,7 @@ func newMakeRepositoryCommand(svc port.ScaffoldService, globals *globalFlags) *c
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:repository [module-name]",
+		Use:   "arch:repository [module-name]",
 		Short: "Generate only the infrastructure repository for a specific module",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -182,7 +182,7 @@ func newMakeMigrationCommand(svc port.ScaffoldService, globals *globalFlags) *co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:migration [name]",
+		Use:   "db:migration [name]",
 		Short: "Generate a SQL migration file pair (up/down)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -209,7 +209,7 @@ func newMakeSeederCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:seeder [name]",
+		Use:   "db:seeder [name]",
 		Short: "Generate a database seeder file",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -237,7 +237,7 @@ func newMakePipelineCommand(svc port.ScaffoldService, globals *globalFlags) *cob
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:pipeline [name]",
+		Use:   "arch:pipeline [name]",
 		Short: "Generate Fan-Out / Fan-In bounded concurrency pipeline helper",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -263,7 +263,7 @@ func newMakeSpecificationCommand(svc port.ScaffoldService, globals *globalFlags)
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:specification [name]",
+		Use:   "arch:specification [name]",
 		Short: "Generate reusable DDD Specification pattern for dynamic query rules",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -289,7 +289,7 @@ func newMakeValueObjectCommand(svc port.ScaffoldService, globals *globalFlags) *
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:valueobject [name]",
+		Use:   "arch:valueobject [name]",
 		Short: "Generate an immutable DDD Value Object",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -316,7 +316,7 @@ func newMakeAggregateCommand(svc port.ScaffoldService, globals *globalFlags) *co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:aggregate [name]",
+		Use:   "arch:aggregate [name]",
 		Short: "Generate a DDD Aggregate Root entity with event recording",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -343,7 +343,7 @@ func newMakeEventCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:event [name]",
+		Use:   "arch:event [name]",
 		Short: "Generate a Domain Event struct and serializer",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -370,7 +370,7 @@ func newMakeCommandCommand(svc port.ScaffoldService, globals *globalFlags) *cobr
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:command [name]",
+		Use:   "arch:command [name]",
 		Short: "Generate a CQRS Command DTO and execution handler",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -397,7 +397,7 @@ func newMakeQueryCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:query [name]",
+		Use:   "arch:query [name]",
 		Short: "Generate a CQRS Query DTO and read-model handler",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

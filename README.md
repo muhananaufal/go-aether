@@ -1,10 +1,9 @@
 <p align="center">
   <h1 align="center">🚀 go-aether</h1>
   <p align="center">
-    <strong>Lightning-fast, Zero-Runtime Dependency, Opinionated Enterprise Architecture CLI Engine for Go.</strong>
+    <strong>A Zero-Runtime, Domain-First Scaffolding CLI Engine for Production-Grade Go Backends.</strong>
   </p>
   <p align="center">
-    <a href="https://github.com/muhananaufal/go-aether/actions"><img src="https://img.shields.io/github/actions/workflow/status/muhananaufal/go-aether/ci.yml?branch=main&style=flat-square" alt="Build Status"></a>
     <a href="https://golang.org/doc/devel/release.html"><img src="https://img.shields.io/badge/Go-1.23+-00ADD8?style=flat-square&logo=go" alt="Go Version"></a>
     <a href="https://github.com/muhananaufal/go-aether/releases"><img src="https://img.shields.io/github/v/release/muhananaufal/go-aether?style=flat-square" alt="Release"></a>
     <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square" alt="License"></a>
@@ -13,39 +12,38 @@
 
 ---
 
-**`go-aether`** is a high-performance, developer-first CLI engine designed for modern Go Backend Engineers and Enterprise Architects. It eliminates the friction of boilerplate construction by scaffolding production-grade, strictly typed **Hexagonal (Ports & Adapters)** and **Domain-Driven Design (DDD)** architectures in milliseconds.
+**`go-aether`** is a developer-first CLI scaffolding engine designed for Go Backend Engineers and Enterprise Architects. It eliminates the friction of boilerplate construction by generating production-grade, strictly typed code across multiple architectural styles — including **Hexagonal (Ports & Adapters)**, **Domain-Driven Design (DDD)**, **CQRS**, **Distributed Systems**, **Fintech**, and **Realtime Protocols** — in milliseconds.
 
-Unlike heavy opinionated frameworks, `go-aether` is **strictly a Dev-Time Scaffolding Tool**. It embeds clean standard `text/template` files into a single binary, generating pure, unencumbered Go code with **zero runtime lock-in**.
+Unlike opinionated frameworks, `go-aether` is **strictly a Dev-Time Scaffolding Tool**. It embeds clean standard `text/template` files into a single self-contained binary, generating pure, unencumbered Go code with **zero runtime lock-in**.
 
 ---
 
-## ✨ Core Highlights & Capabilities
+## ✨ Core Highlights
 
-- 🏗️ **Hexagonal Architecture (Ports & Adapters)**: Automatic separation of concerns across Domain, Port, Service, and Adapter layers.
-- ⚡ **Zero-Runtime Overhead**: The generated code is 100% native Go. No external runtime frameworks required.
-- 🛡️ **Transactional Disk Buffer**: Atomic multi-file writes with automatic rollback on generation error.
-- 🩺 **Aether Doctor**: Built-in AST structural diagnostics against the Single Source of Truth (`aether.yaml`).
-- 🔄 **Distributed Systems Ready**: Out-of-the-box CQRS, Transactional Outbox, Distributed Saga Orchestrator, and HMAC Signed Webhooks.
-- ☁️ **Cloud Native & Plugins**: Native AWS S3, OAuth2 / API Key, In-Process Cron Scheduler, Mailer, Firebase Auth/FCM, and OpenTelemetry Tracing.
-- 🔍 **Brownfield AST Adoption**: Scan legacy Go codebases and seamlessly adopt them into the Aether manifest.
+- 🏗️ **Domain-First Scaffolding**: 90 commands organized into semantic groups (`arch:*`, `db:*`, `api:*`, `security:*`, `fintech:*`, etc.)
+- ⚡ **Zero-Runtime Overhead**: All generated code is 100% native Go — no external runtime frameworks, no hidden dependencies.
+- 🛡️ **Transactional Disk Buffer**: Atomic multi-file generation with automatic rollback on error. Your filesystem is never left in a partial state.
+- 🩺 **Structural Health Check**: Built-in `doctor` command for AST-based diagnostics against the Single Source of Truth (`aether.yaml`).
+- 🔄 **Enterprise Patterns Built-In**: CQRS, Transactional Outbox, Distributed Saga, Unit of Work, and more — generated with a single command.
+- 🔒 **Security & Observability First**: Scaffold OpenTelemetry tracing, Prometheus metrics, Argon2id hashing, Casbin RBAC, and Zero-Trust patterns out of the box.
+- 🔍 **Brownfield Adoption**: Scan existing Go codebases and seamlessly integrate them into the Aether manifest.
 
 ---
 
 ## 🚀 Installation
 
-Install the latest stable release via the standard Go toolchain:
-
 ```bash
 go install github.com/muhananaufal/go-aether@latest
 ```
 
-*(Ensure `$(go env GOPATH)/bin` is in your system `$PATH`)*
+*Ensure `$(go env GOPATH)/bin` is in your system `$PATH`.*
 
 ---
 
 ## 📖 Quick Start
 
 ### 1. Initialize a New Project
+
 Bootstrap a clean architecture workspace and generate the master `aether.yaml` manifest:
 
 ```bash
@@ -53,36 +51,44 @@ mkdir my-service && cd my-service
 go-aether init my-service --arch hexagonal --router chi --db postgres
 ```
 
-### 2. Scaffold Vertical Domain Modules
-Generate a complete vertical slice (`order`) including Domain Entities, Ports, Service Orchestrator, HTTP Handler, and Postgres Repository:
+### 2. Scaffold a Domain Module
+
+Generate a complete vertical slice (`order`) — Domain Entity, Port Interface, Service, HTTP Handler, and Postgres Repository:
 
 ```bash
-go-aether make:module order --transports http
+go-aether arch:module order --transports http
 ```
 
-### 3. Inject Distributed Patterns & Middlewares
-Effortlessly add production-grade patterns into your codebase:
+### 3. Add Enterprise Patterns
 
 ```bash
-# Add CQRS Handlers & Command Bus for the Order domain
-go-aether add:cqrs order
+# Add CQRS Command & Query Bus for the order domain
+go-aether platform:cqrs order
 
-# Add Transactional Outbox pattern & SQL migrations
-go-aether add:outbox
+# Add Transactional Outbox + SQL migrations
+go-aether async:outbox
 
-# Add Distributed Saga Workflow with compensation
-go-aether add:saga checkout
+# Add Distributed Saga with compensation workflow
+go-aether async:saga checkout
 
-# Add HMAC-SHA256 Signed Webhook Dispatcher & Receiver
-go-aether add:webhook
+# Add Unit of Work transactional orchestrator
+go-aether db:uow
 
-# Add Cloud Storage (AWS S3 / MinIO) and In-process Cron Scheduler
-go-aether add:storage s3
-go-aether add:cron cleanup_orders
+# Add Read/Write database replica splitter
+go-aether db:readreplica
 ```
 
-### 4. Run Structural Diagnostics
-Verify your project's architectural compliance and detect drift:
+### 4. Add Security & Observability
+
+```bash
+go-aether security:auth oauth2
+go-aether security:argon2
+go-aether o11y:tracing otel
+go-aether o11y:metrics prometheus
+go-aether infra:healthcheck
+```
+
+### 5. Run Structural Diagnostics
 
 ```bash
 go-aether doctor
@@ -90,124 +96,215 @@ go-aether doctor
 
 ---
 
-## 🗺️ Complete CLI Command Taxonomy (v0.8.6)
+## 🗺️ Complete Command Reference (v0.9.0 — 90 Commands)
 
-### 🔨 Core Generators & Tactical DDD (`make:*`, `init`, `ls`)
-| Command | Description | Example |
-| :--- | :--- | :--- |
-| `ls` | List active domain modules & installed plugins | `go-aether ls` |
-| `init [name]` | Initialize project layout & `aether.yaml` | `go-aether init e-commerce` |
-| `make:module [name]` | Scaffold complete vertical domain slice | `go-aether make:module payment` |
-| `make:service [name]` | Scaffold standalone business use-case service | `go-aether make:service order` |
-| `make:handler [name]` | Scaffold HTTP / gRPC transport handler | `go-aether make:handler user` |
-| `make:domain [name]` | Scaffold pure domain entity & value objects | `go-aether make:domain user` |
-| `make:port [name]` | Scaffold interface contracts (Inbound/Outbound) | `go-aether make:port invoice` |
-| `make:repository [name]` | Scaffold standalone persistence repository | `go-aether make:repository order` |
-| `make:valueobject [name]` | Generate immutable DDD Value Object | `go-aether make:valueobject email` |
-| `make:aggregate [name]` | Generate DDD Aggregate Root with event recorder | `go-aether make:aggregate order` |
-| `make:event [name]` | Generate Domain Event struct & serializer | `go-aether make:event order_paid` |
-| `make:command [name]` | Generate CQRS Command DTO & execution handler | `go-aether make:command create_order` |
-| `make:query [name]` | Generate CQRS Query DTO & read-model handler | `go-aether make:query get_order_by_id` |
-| `make:migration [name]` | Generate SQL migration pair (Goose / Golang-Migrate) | `go-aether make:migration add_users` |
-| `make:seeder [name]` | Generate database dummy data seeder | `go-aether make:seeder initial_users` |
-
-### ⚡ High-Performance Caching & Storage Engine (`add:*`)
-| Command | Description | Example |
-| :--- | :--- | :--- |
-| `add:multilevelcache` | Synchronized L1 (In-Memory) + L2 (Redis) Cache with Pub/Sub invalidation | `go-aether add:multilevelcache` |
-| `add:bloomfilter` | Probabilistic Bloom Filter cache penetration guard | `go-aether add:bloomfilter` |
-| `add:s3 [provider]` | S3 object storage client with pre-signed URL generator (MinIO / AWS) | `go-aether add:s3 minio` |
-| `add:resilience [provider]` | Circuit Breaker & Bulkhead concurrency limiter (Hystrix / Resilience4go) | `go-aether add:resilience resilience4go` |
-| `add:search [provider]` | Fast typo-tolerant full-text search client (Meilisearch / Elasticsearch) | `go-aether add:search meilisearch` |
-
-### 📡 Realtime, WebSockets & Communication (`add:*`)
-| Command | Description | Example |
-| :--- | :--- | :--- |
-| `add:websocket [provider]` | WebSocket connection pool & broadcast hub (Gorilla / Nhooyr) | `go-aether add:websocket gorilla` |
-| `add:sse` | Server-Sent Events (SSE) live unidirectional streaming broker | `go-aether add:sse` |
-| `add:webrtc [provider]` | Pion WebRTC peer-to-peer data channel & signaling session | `go-aether add:webrtc pion` |
-| `add:mqtt [provider]` | Paho MQTT client for IoT telemetry pub/sub | `go-aether add:mqtt paho` |
-| `add:twilio` | Twilio SMS & WhatsApp transactional messaging client | `go-aether add:twilio` |
-
-### 🏦 Fintech & Financial Reliability Engine (`add:*`)
-| Command | Description | Example |
-| :--- | :--- | :--- |
-| `add:idempotency [provider]` | Idempotency-Key validation middleware with atomic lock | `go-aether add:idempotency redis` |
-| `add:ledger` | Double-Entry bookkeeping ledger engine (Zero-Sum Invariant) | `go-aether add:ledger` |
-| `add:decimal` | High-precision decimal money arithmetic helpers | `go-aether add:decimal` |
-| `add:reconciliation` | Automated settlement & transaction reconciliation matcher | `go-aether add:reconciliation` |
-| `add:pricing-engine` | Rule-based tiered pricing & dynamic fee calculator | `go-aether add:pricing-engine` |
-
-### ⚡ Distributed Patterns, Locks, Secrets & Authz (`add:*`)
-| Command | Description | Example |
-| :--- | :--- | :--- |
-| `add:cqrs [module]` | In-module Command & Query Handlers + Bus | `go-aether add:cqrs order` |
-| `add:outbox` | Transactional Outbox engine & SQL migration | `go-aether add:outbox` |
-| `add:saga [workflow]` | Distributed Saga orchestrator & rollback | `go-aether add:saga checkout` |
-| `add:webhook` | HMAC-SHA256 signed webhook engine | `go-aether add:webhook` |
-| `add:lock [provider]` | Distributed mutex lock engine (Redlock) | `go-aether add:lock redis` |
-| `add:secrets [provider]` | Secrets manager client (Vault / AWS) | `go-aether add:secrets vault` |
-| `add:authz [provider]` | RBAC / ABAC authorization engine (Casbin) | `go-aether add:authz casbin` |
-| `add:crypto [algo]` | Envelope encryption helper (AES-256-GCM) | `go-aether add:crypto aes-gcm` |
-| `add:featureflags [provider]` | Feature flags client (Flipt) | `go-aether add:featureflags flipt` |
-| `add:discovery [provider]` | Service discovery client (Consul / etcd) | `go-aether add:discovery consul` |
-| `add:cache [provider]` | High-performance caching layer (Redis / Valkey) | `go-aether add:cache redis` |
-| `add:worker [provider]` | Asynchronous task queue (Asynq / River) | `go-aether add:worker asynq` |
-| `add:eventing [provider]` | Event streaming broker (Kafka / RabbitMQ) | `go-aether add:eventing kafka` |
-
-### ☁️ Cloud, Auth, Health, Profiling & Observability
-| Command | Description | Example |
-| :--- | :--- | :--- |
-| `add:healthcheck` | K8s `/livez` & `/readyz` probe handlers | `go-aether add:healthcheck` |
-| `add:profiling [provider]` | Protected runtime profiling endpoints (pprof) | `go-aether add:profiling pprof` |
-| `add:auth [type]` | Authentication provider (OAuth2 / API Key) | `go-aether add:auth oauth2` |
-| `add:storage [provider]` | Cloud blob storage abstraction (S3 / GCS / Local) | `go-aether add:storage s3` |
-| `add:cron [job-name]` | In-process recurring job scheduler | `go-aether add:cron report_job` |
-| `add:mailer [provider]` | Transactional email client (SMTP / Resend) | `go-aether add:mailer smtp` |
-| `add:firebase` | Firebase Auth & FCM push notifications | `go-aether add:firebase` |
-| `add:logger [provider]` | Structured JSON logger with trace correlation | `go-aether add:logger slog` |
-| `add:tracing [provider]` | OpenTelemetry tracing exporter | `go-aether add:tracing otel` |
-| `add:metrics [provider]` | Prometheus metric collectors | `go-aether add:metrics prometheus` |
-| `add:deploy [target]` | Cloud deployment manifests (K8s, Helm, Lambda) | `go-aether add:deploy k8s` |
-| `add:cicd [provider]` | Automated CI/CD workflows (GitHub Actions / GitLab) | `go-aether add:cicd github` |
-| `add:ai [provider]` | AI / LLM gateway client (OpenAI, Anthropic, Ollama) | `go-aether add:ai openai` |
-| `add:multitenancy [module]` | Row Level Security (RLS) tenant isolation | `go-aether add:multitenancy customer` |
-| `add:test` | Integration test suite & mocking harness | `go-aether add:test` |
-| `adopt [--scan]` | Scan legacy project and create `aether.yaml` | `go-aether adopt --scan` |
-| `doctor` | Structural health and integrity check | `go-aether doctor` |
+### ⚙️ Core Lifecycle
+| Command | Description |
+| :--- | :--- |
+| `init [name]` | Bootstrap project layout and `aether.yaml` manifest |
+| `adopt` | Scan and adopt a legacy brownfield Go repository |
+| `doctor` | Run structural health diagnostics against `aether.yaml` |
+| `ls` | List active modules, architectural paths, and installed plugins |
 
 ---
 
-## 📂 Architecture Layout
+### 🏗️ Architecture Scaffolding (`arch:*`)
+| Command | Description |
+| :--- | :--- |
+| `arch:module [name]` | Scaffold a complete vertical domain slice (Domain, Port, Service, Handler, Repo) |
+| `arch:domain [name]` | Scaffold the domain layer entity only |
+| `arch:port [name]` | Scaffold the port interface contract only |
+| `arch:service [name]` | Scaffold the service layer only |
+| `arch:handler [name]` | Scaffold the transport handler only |
+| `arch:repository [name]` | Scaffold the infrastructure repository only |
+| `arch:aggregate [name]` | Generate a DDD Aggregate Root with event recording |
+| `arch:event [name]` | Generate a Domain Event struct and serializer |
+| `arch:valueobject [name]` | Generate an immutable DDD Value Object |
+| `arch:command [name]` | Generate a CQRS Command DTO and execution handler |
+| `arch:query [name]` | Generate a CQRS Query DTO and read-model handler |
+| `arch:mock [interface]` | Scaffold an interface mock via Mockery for isolated unit tests |
+| `arch:pipeline [name]` | Generate a Fan-Out / Fan-In bounded concurrency pipeline |
+| `arch:specification [name]` | Generate a DDD Specification pattern for dynamic query rules |
+| `arch:di [type]` | Set up a Dependency Injection container (fx, wire) |
+| `arch:error` | Set up a standardized centralized error handler |
+
+---
+
+### 🗄️ Database & Persistence (`db:*`)
+| Command | Description |
+| :--- | :--- |
+| `db:migration [name]` | Generate a SQL migration file pair (up/down) |
+| `db:seeder [name]` | Generate a database seeder file |
+| `db:sqlc` | Set up SQLC type-safe query code generator |
+| `db:uow` | Set up Unit of Work transactional orchestrator |
+| `db:readreplica` | Set up Primary-Write / Replica-Read connection pool splitter |
+| `db:paginator` | Generate a cursor-based opaque base64 pagination helper |
+
+---
+
+### 🌐 API Layer (`api:*`)
+| Command | Description |
+| :--- | :--- |
+| `api:graphql` | Set up gqlgen GraphQL server with DataLoader boilerplate |
+| `api:openapi` | Set up Swagger / OpenAPI 3.0 documentation middleware |
+| `api:grpc` | Set up gRPC bi-directional duplex streaming handler |
+| `api:grpc-gateway` | Set up gRPC-Gateway REST/JSON reverse-proxy |
+| `api:middleware [type]` | Inject a middleware (jwt-auth, rate-limit) into a module handler |
+| `api:transport [type]` | Register a new global transport protocol in `aether.yaml` |
+| `api:validator [type]` | Set up struct validation wrapper (playground) |
+| `api:idempotency [type]` | Set up Idempotency-Key validation middleware |
+
+---
+
+### ⚡ Realtime Protocols (`realtime:*`)
+| Command | Description |
+| :--- | :--- |
+| `realtime:ws [provider]` | Set up WebSocket hub and connection pool |
+| `realtime:sse` | Set up Server-Sent Events (SSE) streaming broker |
+| `realtime:webrtc [pion]` | Set up Pion WebRTC peer-to-peer data channel hub |
+| `realtime:mqtt [paho]` | Set up Paho MQTT client for IoT telemetry |
+
+---
+
+### 📨 Async Messaging & Events (`async:*`)
+| Command | Description |
+| :--- | :--- |
+| `async:worker [name]` | Generate an asynchronous background job processor |
+| `async:cron [job-name]` | Set up in-process recurring cron scheduler |
+| `async:outbox` | Set up Transactional Outbox pattern with SQL migrations |
+| `async:saga [workflow]` | Set up Distributed Saga orchestrator with compensation |
+| `async:eventing` | Set up global Pub/Sub event bus interfaces |
+| `async:webhook` | Set up HMAC-SHA256 signed webhook dispatcher |
+
+---
+
+### 🔐 Security & Zero-Trust (`security:*`)
+| Command | Description |
+| :--- | :--- |
+| `security:auth [type]` | Set up authentication middleware (oauth2, apikey) |
+| `security:authz [casbin]` | Set up RBAC / ABAC authorization engine (Casbin) |
+| `security:oauth2 [provider]` | Set up OIDC/OAuth2 login with PKCE state verification |
+| `security:argon2` | Set up GPU-resistant Argon2id password hasher |
+| `security:crypto [algo]` | Set up symmetric envelope encryption (AES-256-GCM) |
+| `security:secrets [provider]` | Set up secret manager client (Vault, AWS) |
+| `security:auditlog` | Set up tamper-evident immutable audit log with PII scrubbing |
+
+---
+
+### 💾 Caching Layer (`cache:*`)
+| Command | Description |
+| :--- | :--- |
+| `cache:redis [type]` | Set up global cache layer (Redis, Valkey) |
+| `cache:multilevel` | Set up synchronized L1 (memory) + L2 (Redis) cache |
+| `cache:bloom` | Set up probabilistic Bloom Filter cache penetration guard |
+| `cache:dedup` | Set up Singleflight request deduplication (anti thundering herd) |
+
+---
+
+### 🏭 Infrastructure & DevOps (`infra:*`)
+| Command | Description |
+| :--- | :--- |
+| `infra:cicd [provider]` | Set up CI/CD pipelines (GitHub Actions, GitLab CI) |
+| `infra:deploy [target]` | Set up deployment manifests (K8s, Helm, Lambda) |
+| `infra:healthcheck` | Set up Kubernetes Liveness `/livez` and Readiness `/readyz` probes |
+| `infra:drain` | Set up zero-downtime graceful shutdown and draining manager |
+| `infra:profiling [pprof]` | Set up protected runtime profiling endpoints |
+| `infra:lint` | Set up golangci-lint configuration and git pre-commit hooks |
+| `infra:featureflags [provider]` | Set up feature flags and canary release client (Flipt) |
+| `infra:config [type]` | Set up centralized config manager (Viper, Koanf) |
+| `infra:search [provider]` | Set up full-text search engine client (Elasticsearch, Meilisearch) |
+
+---
+
+### 📊 Observability (`o11y:*`)
+| Command | Description |
+| :--- | :--- |
+| `o11y:tracing [exporter]` | Set up OpenTelemetry distributed tracing (Jaeger, stdout) |
+| `o11y:metrics [provider]` | Set up Prometheus RED metrics middleware and endpoint |
+| `o11y:logger [provider]` | Set up structured JSON logger with trace correlation (slog, zap) |
+
+---
+
+### 💰 Fintech & Financial Reliability (`fintech:*`)
+| Command | Description |
+| :--- | :--- |
+| `fintech:ledger` | Set up Double-Entry bookkeeping ledger engine |
+| `fintech:decimal` | Set up high-precision decimal money arithmetic helpers |
+| `fintech:reconcile` | Set up automated settlement and transaction reconciliation |
+| `fintech:pricing` | Set up rule-based tiered pricing and fee calculation engine |
+
+---
+
+### 📣 Notifications & Communication (`notif:*`)
+| Command | Description |
+| :--- | :--- |
+| `notif:sms` | Set up Twilio SMS and WhatsApp omni-channel messaging |
+| `notif:push` | Set up Firebase Auth and FCM push notifications |
+| `notif:mail [provider]` | Set up transactional email client (SMTP, Resend) |
+
+---
+
+### ☁️ Cloud Storage (`cloud:*`)
+| Command | Description |
+| :--- | :--- |
+| `cloud:s3 [provider]` | Set up S3 object storage client with pre-signed URL generator |
+| `cloud:storage [provider]` | Set up cloud blob storage adapter (S3, GCS, local) |
+
+---
+
+### 🌐 Distributed Platform (`platform:*`)
+| Command | Description |
+| :--- | :--- |
+| `platform:discovery [provider]` | Set up service discovery client (Consul, etcd) |
+| `platform:lock [redis]` | Set up distributed Redlock mutex engine |
+| `platform:resilience [provider]` | Set up Circuit Breaker and Bulkhead resilience engine |
+| `platform:cqrs [module]` | Set up CQRS Command and Query handlers for a module |
+| `platform:multitenancy [module]` | Set up Row Level Security (RLS) SQL tenant isolation |
+| `platform:tenant` | Set up tenant context middleware and isolation helper |
+| `platform:ai [provider]` | Set up LLM proxy infrastructure (OpenAI, Ollama) |
+
+---
+
+### 🧪 Testing & QA Engine (`test:*`)
+| Command | Description |
+| :--- | :--- |
+| `test:stress` | Scaffold high-concurrency load testing suite (k6 / Vegeta) |
+| `test:chaos` | Scaffold chaos engineering fault injection middleware |
+| `test:fuzz` | Scaffold Go native continuous fuzz testing harness |
+| `test:mutation` | Scaffold mutation testing verification runner |
+| `test:benchmark` | Scaffold micro-benchmark suite and memory allocation profiler |
+| `test:container` | Scaffold Testcontainers integration testing (PostgreSQL + Redis) |
+| `test:integration` | Set up integration test helpers and mocking base |
+
+---
+
+## 📂 Generated Project Layout
 
 ```text
 my-service/
-├── aether.yaml                     <-- Single Source of Truth Manifest
+├── aether.yaml                     <- Single Source of Truth Manifest
 ├── cmd/
 │   └── api/
-│       └── main.go                 <-- Application Entrypoint
+│       └── main.go                 <- Application Entrypoint
 ├── internal/
 │   ├── core/
-│   │   ├── domain/                 <-- Pure Business Logic & Structs
-│   │   ├── port/                   <-- Inbound & Outbound Interfaces
-│   │   └── service/                <-- Use Cases & Application Services
+│   │   ├── domain/                 <- Pure Business Logic & Entities
+│   │   ├── port/                   <- Inbound & Outbound Interface Contracts
+│   │   └── service/                <- Use Cases & Application Orchestration
 │   ├── adapter/
-│   │   ├── handler/http/           <-- HTTP Controllers
-│   │   └── repository/             <-- Database Implementations
-│   ├── jobs/                       <-- Background Cron Workloads
-│   └── workflows/                  <-- Saga Workflows
+│   │   ├── handler/http/           <- HTTP Controllers
+│   │   └── repository/             <- Database Implementations
+│   ├── jobs/                       <- Background Cron Workloads
+│   └── workflows/                  <- Saga Orchestration Workflows
 ├── pkg/
-│   ├── auth/                       <-- OAuth2 & API Key Validators
-│   ├── cron/                       <-- Job Schedulers
-│   ├── discovery/                  <-- Consul & etcd Clients
-│   ├── firebase/                   <-- Firebase Auth & Push
-│   ├── logger/                     <-- Slog Correlation Handler
-│   ├── mailer/                     <-- Transactional Mailer
-│   ├── outbox/                     <-- Transactional Outbox Engine
-│   ├── saga/                       <-- Saga Orchestrator Core
-│   ├── storage/                    <-- S3 Cloud Storage
-│   └── webhook/                    <-- HMAC Webhook Engine
-└── migrations/                     <-- SQL Migrations
+│   ├── auth/                       <- OAuth2 & API Key Validators
+│   ├── cache/                      <- L1/L2 Multi-Level Cache
+│   ├── concurrency/                <- Pipeline & Singleflight Helpers
+│   ├── middleware/                  <- Metrics, Audit Log, Rate Limit
+│   ├── security/                   <- Argon2id, Crypto, Secrets
+│   ├── server/                     <- Drain & Health Check Handlers
+│   └── tenant/                     <- Multi-Tenant Context Isolation
+└── migrations/                     <- SQL Migrations (Up/Down)
 ```
 
 ---
@@ -215,8 +312,3 @@ my-service/
 ## 📜 License
 
 This project is open-sourced under the [MIT License](LICENSE) © 2026 muhananaufal.
-
----
-<p align="center">
-  <i>Engineered with extreme precision for Go Artisans by AETHERIS.</i>
-</p>

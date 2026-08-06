@@ -12,7 +12,7 @@ func newMakeCursorPaginatorCommand(svc port.ScaffoldService, globals *globalFlag
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "make:cursor-paginator",
+		Use:   "db:paginator",
 		Short: "Generate cursor-based opaque base64 pagination helper",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()

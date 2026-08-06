@@ -13,7 +13,7 @@ func newAddMiddlewareCommand(svc port.ScaffoldService, globals *globalFlags) *co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:middleware [middleware-type]",
+		Use:   "api:middleware [middleware-type]",
 		Short: "Inject a middleware (e.g. jwt-auth, rate-limit) into a module's transport handler",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -48,7 +48,7 @@ func newAddCacheCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:cache [cache-type]",
+		Use:   "cache:redis [cache-type]",
 		Short: "Set up the global cache layer configuration and generate the cache provider infrastructure",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -73,7 +73,7 @@ func newAddCacheCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 
 func newAddTransportCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add:transport [transport-type]",
+		Use:   "api:transport [transport-type]",
 		Short: "Register a new global transport protocol in aether.yaml",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -100,7 +100,7 @@ func newAddWorkerCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:worker [worker-name]",
+		Use:   "async:worker [worker-name]",
 		Short: "Generate an asynchronous background processor",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -130,7 +130,7 @@ func newAddEventingCommand(svc port.ScaffoldService, globals *globalFlags) *cobr
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:eventing",
+		Use:   "async:eventing",
 		Short: "Set up the global Publisher and Subscriber interfaces for event-driven architecture",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -157,7 +157,7 @@ func newAddMetricsCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:metrics [provider]",
+		Use:   "o11y:metrics [provider]",
 		Short: "Set up the metrics middleware and endpoint (e.g. prometheus)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -183,7 +183,7 @@ func newAddTracingCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:tracing [exporter]",
+		Use:   "o11y:tracing [exporter]",
 		Short: "Set up the OpenTelemetry tracing infrastructure (e.g. jaeger, stdout)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -209,7 +209,7 @@ func newAddDeployCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:deploy [target]",
+		Use:   "infra:deploy [target]",
 		Short: "Set up the deployment manifests (k8s, helm, lambda)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -235,7 +235,7 @@ func newAddCICDCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:cicd [provider]",
+		Use:   "infra:cicd [provider]",
 		Short: "Set up the CI/CD pipeline (github, gitlab)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -261,7 +261,7 @@ func newAddAICommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Comm
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:ai [provider]",
+		Use:   "platform:ai [provider]",
 		Short: "Set up the LLM proxy infrastructure (e.g. llm-proxy)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -287,7 +287,7 @@ func newAddDICommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Comm
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:di [di-type]",
+		Use:   "arch:di [di-type]",
 		Short: "Set up a dependency injection container (e.g. fx, wire)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -313,7 +313,7 @@ func newAddConfigCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:config [config-type]",
+		Use:   "infra:config [config-type]",
 		Short: "Set up a centralized configuration manager (e.g. viper, koanf)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -339,7 +339,7 @@ func newAddErrorCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:error",
+		Use:   "arch:error",
 		Short: "Set up a standardized centralized error handler",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -365,7 +365,7 @@ func newAddValidatorCommand(svc port.ScaffoldService, globals *globalFlags) *cob
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:validator [validator-type]",
+		Use:   "api:validator [validator-type]",
 		Short: "Set up the struct validation wrapper (e.g. playground)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -391,7 +391,7 @@ func newAddTestCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:test",
+		Use:   "test:integration",
 		Short: "Set up the integration test helpers and mocking base",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -417,7 +417,7 @@ func newAddMultitenancyCommand(svc port.ScaffoldService, globals *globalFlags) *
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:multitenancy [module-name]",
+		Use:   "platform:multitenancy [module-name]",
 		Short: "Set up Row Level Security (RLS) SQL policies for tenant isolation",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -443,7 +443,7 @@ func newAddCQRSCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:cqrs [module-name]",
+		Use:   "platform:cqrs [module-name]",
 		Short: "Set up CQRS Command and Query handlers within module scope",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -469,7 +469,7 @@ func newAddOutboxCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:outbox",
+		Use:   "async:outbox",
 		Short: "Set up Transactional Outbox pattern infrastructure and SQL migrations",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -495,7 +495,7 @@ func newAddSagaCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:saga [workflow-name]",
+		Use:   "async:saga [workflow-name]",
 		Short: "Set up Distributed Saga orchestrator and compensation workflow",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -521,7 +521,7 @@ func newAddWebhookCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:webhook",
+		Use:   "async:webhook",
 		Short: "Set up secure HMAC-SHA256 signed webhook dispatcher & receiver",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -547,7 +547,7 @@ func newAddDiscoveryCommand(svc port.ScaffoldService, globals *globalFlags) *cob
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:discovery [provider]",
+		Use:   "platform:discovery [provider]",
 		Short: "Set up service discovery client (consul, etcd)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -573,7 +573,7 @@ func newAddAuthCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:auth [oauth2|apikey]",
+		Use:   "security:auth [oauth2|apikey]",
 		Short: "Set up authentication handlers and middleware (oauth2, apikey)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -599,7 +599,7 @@ func newAddStorageCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:storage [provider]",
+		Use:   "cloud:storage [provider]",
 		Short: "Set up cloud blob storage adapter (s3, gcs, local)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -625,7 +625,7 @@ func newAddCronCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:cron [job-name]",
+		Use:   "async:cron [job-name]",
 		Short: "Set up in-process recurring background cron job",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -651,7 +651,7 @@ func newAddMailerCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:mailer [provider]",
+		Use:   "notif:mail [provider]",
 		Short: "Set up transactional email delivery client (smtp, resend)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -677,7 +677,7 @@ func newAddFirebaseCommand(svc port.ScaffoldService, globals *globalFlags) *cobr
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:firebase",
+		Use:   "notif:push",
 		Short: "Set up Firebase Auth token decoding and FCM push messaging",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -703,7 +703,7 @@ func newAddLoggerCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:logger [provider]",
+		Use:   "o11y:logger [provider]",
 		Short: "Set up structured JSON logger with context correlation tracking (slog, zap)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -729,7 +729,7 @@ func newAddHealthcheckCommand(svc port.ScaffoldService, globals *globalFlags) *c
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:healthcheck",
+		Use:   "infra:healthcheck",
 		Short: "Set up Kubernetes Liveness (/livez) and Readiness (/readyz) probe handlers",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -755,7 +755,7 @@ func newAddSecretsCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:secrets [vault|aws]",
+		Use:   "security:secrets [vault|aws]",
 		Short: "Set up secret manager client (vault, aws)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -781,7 +781,7 @@ func newAddLockCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:lock [redis]",
+		Use:   "platform:lock [redis]",
 		Short: "Set up distributed lock (Redlock) engine",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -807,7 +807,7 @@ func newAddAuthzCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:authz [casbin]",
+		Use:   "security:authz [casbin]",
 		Short: "Set up RBAC / ABAC authorization engine (casbin)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -833,7 +833,7 @@ func newAddCryptoCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:crypto [aes-gcm]",
+		Use:   "security:crypto [aes-gcm]",
 		Short: "Set up symmetric envelope encryption helper (aes-gcm)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -859,7 +859,7 @@ func newAddProfilingCommand(svc port.ScaffoldService, globals *globalFlags) *cob
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:profiling [pprof]",
+		Use:   "infra:profiling [pprof]",
 		Short: "Set up protected runtime profiling endpoints (pprof)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -885,7 +885,7 @@ func newAddFeatureFlagsCommand(svc port.ScaffoldService, globals *globalFlags) *
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:featureflags [flipt]",
+		Use:   "infra:featureflags [flipt]",
 		Short: "Set up feature flags & canary release client (flipt)",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -911,7 +911,7 @@ func newAddIdempotencyCommand(svc port.ScaffoldService, globals *globalFlags) *c
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:idempotency [redis|memory]",
+		Use:   "api:idempotency [redis|memory]",
 		Short: "Set up Idempotency-Key validation middleware",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -937,7 +937,7 @@ func newAddLedgerCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:ledger",
+		Use:   "fintech:ledger",
 		Short: "Set up Double-Entry bookkeeping ledger engine",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -963,7 +963,7 @@ func newAddDecimalCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:decimal",
+		Use:   "fintech:decimal",
 		Short: "Set up high-precision financial decimal money helpers",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -989,7 +989,7 @@ func newAddReconciliationCommand(svc port.ScaffoldService, globals *globalFlags)
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:reconciliation",
+		Use:   "fintech:reconcile",
 		Short: "Set up automated settlement & transaction reconciliation engine",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1015,7 +1015,7 @@ func newAddPricingEngineCommand(svc port.ScaffoldService, globals *globalFlags) 
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:pricing-engine",
+		Use:   "fintech:pricing",
 		Short: "Set up rule-based tiered pricing and fee calculation engine",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1041,7 +1041,7 @@ func newAddWebSocketCommand(svc port.ScaffoldService, globals *globalFlags) *cob
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:websocket [gorilla|nhooyr]",
+		Use:   "realtime:ws [gorilla|nhooyr]",
 		Short: "Set up WebSocket hub and connection pool",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1067,7 +1067,7 @@ func newAddSSECommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Com
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:sse",
+		Use:   "realtime:sse",
 		Short: "Set up Server-Sent Events (SSE) live streaming broker",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1093,7 +1093,7 @@ func newAddWebRTCCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:webrtc [pion]",
+		Use:   "realtime:webrtc [pion]",
 		Short: "Set up Pion WebRTC peer-to-peer data channel hub",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1119,7 +1119,7 @@ func newAddMQTTCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:mqtt [paho]",
+		Use:   "realtime:mqtt [paho]",
 		Short: "Set up Paho MQTT client for IoT telemetry pub/sub",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1145,7 +1145,7 @@ func newAddTwilioCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:twilio",
+		Use:   "notif:sms",
 		Short: "Set up Twilio SMS & WhatsApp omni-channel messaging client",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1171,7 +1171,7 @@ func newAddMultiLevelCacheCommand(svc port.ScaffoldService, globals *globalFlags
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:multilevelcache",
+		Use:   "cache:multilevel",
 		Short: "Set up synchronized L1 memory + L2 Redis cache",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1197,7 +1197,7 @@ func newAddBloomFilterCommand(svc port.ScaffoldService, globals *globalFlags) *c
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:bloomfilter",
+		Use:   "cache:bloom",
 		Short: "Set up probabilistic Bloom Filter cache penetration guard",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1223,7 +1223,7 @@ func newAddS3Command(svc port.ScaffoldService, globals *globalFlags) *cobra.Comm
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:s3 [minio|aws]",
+		Use:   "cloud:s3 [minio|aws]",
 		Short: "Set up S3 object storage client with pre-signed URL generator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1249,7 +1249,7 @@ func newAddResilienceCommand(svc port.ScaffoldService, globals *globalFlags) *co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:resilience [hystrix|resilience4go]",
+		Use:   "platform:resilience [hystrix|resilience4go]",
 		Short: "Set up Circuit Breaker and Bulkhead resilience engine",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1275,7 +1275,7 @@ func newAddSearchCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:search [meilisearch|elasticsearch]",
+		Use:   "infra:search [meilisearch|elasticsearch]",
 		Short: "Set up full-text search engine client",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -1301,7 +1301,7 @@ func newAddSQLCCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:sqlc",
+		Use:   "db:sqlc",
 		Short: "Set up SQLC configuration, base schema, and type-safe query templates",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
@@ -1326,7 +1326,7 @@ func newAddGRPCStreamCommand(svc port.ScaffoldService, globals *globalFlags) *co
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:grpc-stream",
+		Use:   "api:grpc",
 		Short: "Set up gRPC bi-directional duplex streaming RPC handler and protobuf contract",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
@@ -1351,7 +1351,7 @@ func newAddGRPCGatewayCommand(svc port.ScaffoldService, globals *globalFlags) *c
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:grpc-gateway",
+		Use:   "api:grpc-gateway",
 		Short: "Set up gRPC-Gateway reverse-proxy HTTP REST JSON bridge",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
@@ -1376,7 +1376,7 @@ func newAddTenantContextCommand(svc port.ScaffoldService, globals *globalFlags) 
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:tenant-context",
+		Use:   "platform:tenant",
 		Short: "Set up multi-tenancy middleware and tenant context isolation helper",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()

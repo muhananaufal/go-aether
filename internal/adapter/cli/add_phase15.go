@@ -12,7 +12,7 @@ func newAddSingleflightCommand(svc port.ScaffoldService, globals *globalFlags) *
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:singleflight",
+		Use:   "cache:dedup",
 		Short: "Set up request deduplication helper to prevent cache stampede",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
@@ -37,7 +37,7 @@ func newAddDrainCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:drain",
+		Use:   "infra:drain",
 		Short: "Set up zero-downtime graceful shutdown and connection draining manager",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
@@ -63,7 +63,7 @@ func newAddOAuth2Command(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var provider string
 
 	cmd := &cobra.Command{
-		Use:   "add:oauth2 [provider]",
+		Use:   "security:oauth2 [provider]",
 		Short: "Set up OIDC/OAuth2 login client with PKCE state verification",
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -95,7 +95,7 @@ func newAddAuditLogCommand(svc port.ScaffoldService, globals *globalFlags) *cobr
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:auditlog",
+		Use:   "security:auditlog",
 		Short: "Set up tamper-evident immutable audit log with PII scrubbing",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
@@ -120,7 +120,7 @@ func newAddArgon2Command(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	var force bool
 
 	cmd := &cobra.Command{
-		Use:   "add:argon2",
+		Use:   "security:argon2",
 		Short: "Set up GPU-resistant Argon2id password security hasher",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
