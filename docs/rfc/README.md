@@ -25,10 +25,11 @@ Dokumentasi rancangan arsitektur, keputusan sistem (ADR), dan riwayat implementa
 | `20260806-15` | [Phase 13: Native QA, Testing, Stress & Chaos Engine](20260806-go-aether-phase13-testing-qa-engine.md) | Testing & Resilience | `feature/v0.8.7-testing-qa-engine` | `v0.8.7` | `IMPLEMENTED` | 2026-08-06 |
 | `20260806-16` | [Phase 14: Enterprise SQLC, Advanced gRPC Streaming & Multi-Tenancy](20260806-go-aether-phase14-enterprise-sqlc-grpc-multitenancy.md) | SQLC, gRPC & Tenant | `feature/v0.8.8-sqlc-grpc-multitenancy` | `v0.8.8` | `IMPLEMENTED` | 2026-08-06 |
 | `20260806-17` | [Phase 15: Concurrency Pipelines, Zero-Trust & Observability](20260806-go-aether-phase15-concurrency-zerotrust.md) | Concurrency & Security | `feature/v0.8.9-concurrency-zerotrust` | `v0.8.9` | `IMPLEMENTED` | 2026-08-06 |
+| `20260807-01` | [Phase 16: The Final Gap to v1.0.0](20260807-go-aether-v0.9.0-final-gap.md) | CLI Gap Closure | `feature/v0.9.0-final-gap` | `v0.9.0` | `IMPLEMENTED` | 2026-08-07 |
 
 ---
 
-## 🗺️ Master Evolution Roadmap: 15 Phases to v1.0.0
+## 🗺️ Master Evolution Roadmap: 16 Phases to v1.0.0
 
 ```mermaid
 flowchart TD
@@ -40,11 +41,12 @@ flowchart TD
         F11 --> F12["v0.8.6: Caching & Cloud Storage Engine (5 Cmd)"]
     end
 
-    subgraph CoreEnterpriseGap [🎯 FOKUS PENUTUPAN GAP CORE & ENTERPRISE (23 Command)]
+    subgraph CoreEnterpriseGap [🎯 FOKUS PENUTUPAN GAP CORE & ENTERPRISE (29 Command)]
         F12 --> F13["v0.8.7: Native QA, Stress & Chaos Engine (7 Cmd)"]
         F13 --> F14["v0.8.8: Enterprise SQLC, Unit of Work & gRPC/GraphQL (8 Cmd)"]
         F14 --> F15["v0.8.9: Concurrency Pipelines, Zero-Trust & Observability (8 Cmd)"]
-        F15 --> V1["🚀 v1.0.0: Grand Parity GA (89 Total Commands)"]
+        F15 --> F16["v0.9.0: The Final Gap (6 Cmd)"]
+        F16 --> V1["🚀 v1.0.0: Grand Parity GA (90 Total Commands)"]
     end
 ```
 
