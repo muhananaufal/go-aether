@@ -245,3 +245,75 @@ func (s *AetherScaffoldService) AddTracing(ctx context.Context, startDir, export
 	
 	return tx.Commit(ctx)
 }
+
+// AddDeploy sets up the deployment manifests (e.g. Kubernetes, Helm).
+func (s *AetherScaffoldService) AddDeploy(ctx context.Context, startDir, target string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, _ := domain.NewTemplateData("deploy", manifest, nil, false, false)
+	tmplName := fmt.Sprintf("cloud/%s_deployment.yaml.tmpl", target)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destFile := filepath.Join(projectRoot, "deploy", fmt.Sprintf("%s.yaml", target))
+	
+	tx.Stage(destFile, content, force, dryRun)
+	return tx.Commit(ctx)
+}
+
+// AddCICD sets up the CI/CD pipelines (e.g. GitHub Actions).
+func (s *AetherScaffoldService) AddCICD(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, _ := domain.NewTemplateData("cicd", manifest, nil, false, false)
+	var tmplName, destFile string
+
+	projectRoot := filepath.Dir(manifestPath)
+	if provider == "github" {
+		tmplName = "cloud/github_actions.yml.tmpl"
+		destFile = filepath.Join(projectRoot, ".github", "workflows", "ci.yml")
+	} else {
+		return fmt.Errorf("unsupported CI/CD provider: %s", provider)
+	}
+
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	tx.Stage(destFile, content, force, dryRun)
+	return tx.Commit(ctx)
+}
+
+// AddAI sets up the LLM proxy interface and stub.
+func (s *AetherScaffoldService) AddAI(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, _ := domain.NewTemplateData("ai", manifest, nil, false, false)
+	tmplName := "ai/llm_proxy.go.tmpl"
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "ai", "llm_proxy.go")
+	
+	tx.Stage(destFile, content, force, dryRun)
+	return tx.Commit(ctx)
+}

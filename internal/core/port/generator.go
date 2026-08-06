@@ -84,4 +84,13 @@ type ScaffoldService interface {
 
 	// AddTracing sets up the OpenTelemetry tracing infrastructure.
 	AddTracing(ctx context.Context, startDir, exporter string, dryRun, force bool) error
+
+	// AddDeploy sets up the deployment manifests (e.g. Kubernetes, Helm).
+	AddDeploy(ctx context.Context, startDir, target string, dryRun, force bool) error
+
+	// AddCICD sets up the CI/CD pipelines (e.g. GitHub Actions).
+	AddCICD(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddAI sets up the LLM proxy interface and stub.
+	AddAI(ctx context.Context, startDir, provider string, dryRun, force bool) error
 }

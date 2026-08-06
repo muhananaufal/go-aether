@@ -204,3 +204,81 @@ func newAddTracingCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing tracing file")
 	return cmd
 }
+
+func newAddDeployCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:deploy [target]",
+		Short: "Set up the deployment manifests (k8s, helm, lambda)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddDeploy(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("☁️ Injected [%s] deployment manifests\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing deploy file")
+	return cmd
+}
+
+func newAddCICDCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:cicd [provider]",
+		Short: "Set up the CI/CD pipeline (github, gitlab)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddCICD(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🚀 Injected [%s] CI/CD pipeline\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing cicd file")
+	return cmd
+}
+
+func newAddAICommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:ai [provider]",
+		Short: "Set up the LLM proxy infrastructure (e.g. llm-proxy)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddAI(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🤖 Injected [%s] AI LLM-Proxy infrastructure\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing ai file")
+	return cmd
+}
