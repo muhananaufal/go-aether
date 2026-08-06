@@ -1296,3 +1296,103 @@ func newAddSearchCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing search files")
 	return cmd
 }
+
+func newAddSQLCCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:sqlc",
+		Short: "Set up SQLC configuration, base schema, and type-safe query templates",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddSQLC(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("🗄️ Successfully configured SQLC type-safe code generator in sqlc.yaml and db/")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing SQLC files")
+	return cmd
+}
+
+func newAddGRPCStreamCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:grpc-stream",
+		Short: "Set up gRPC bi-directional duplex streaming RPC handler and protobuf contract",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddGRPCStream(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("⚡ Generated gRPC bi-directional duplex streaming handler and protobuf contract")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing gRPC stream files")
+	return cmd
+}
+
+func newAddGRPCGatewayCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:grpc-gateway",
+		Short: "Set up gRPC-Gateway reverse-proxy HTTP REST JSON bridge",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddGRPCGateway(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("🌐 Generated gRPC-Gateway HTTP/REST JSON reverse-proxy server")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing gRPC-Gateway files")
+	return cmd
+}
+
+func newAddTenantContextCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:tenant-context",
+		Short: "Set up multi-tenancy middleware and tenant context isolation helper",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddTenantContext(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("🏢 Generated multi-tenancy isolation context and middleware in pkg/tenant/")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing tenant context files")
+	return cmd
+}

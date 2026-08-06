@@ -1,0 +1,134 @@
+package grpc
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"log/slog"
+	"sync"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+// StreamMessage represents a generic bidirectional streaming payload.
+type StreamMessage struct {
+	EventID        string            `json:"event_id"`
+	Topic          string            `json:"topic"`
+	Payload        []byte            `json:"payload"`
+	TimestampUnix  int64             `json:"timestamp_unix"`
+	Metadata       map[string]string `json:"metadata"`
+}
+
+// StreamResponse represents an acknowledgement or streaming event response.
+type StreamResponse struct {
+	EventID        string `json:"event_id"`
+	Status         string `json:"status"`
+	AckData        []byte `json:"ack_data"`
+	ServerTimeUnix int64  `json:"server_time_unix"`
+}
+
+// GenericStreamServer defines the abstraction for bidirectional streaming RPC.
+type GenericStreamServer interface {
+	Send(*StreamResponse) error
+	Recv() (*StreamMessage, error)
+	grpc.ServerStream
+}
+
+// StreamHandler manages bidirectional gRPC stream lifecycles.
+type StreamHandler struct {
+	logger *slog.Logger
+	mu     sync.RWMutex
+}
+
+// NewStreamHandler creates a new gRPC streaming handler.
+func NewStreamHandler(logger *slog.Logger) *StreamHandler {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &StreamHandler{logger: logger}
+}
+
+// HandleDuplexStream executes high-performance bi-directional duplex streaming.
+func (h *StreamHandler) HandleDuplexStream(stream GenericStreamServer) error {
+	ctx := stream.Context()
+	h.logger.Info("initiated bidirectional gRPC stream connection")
+
+	errChan := make(chan error, 2)
+
+	// 1. Inbound reader goroutine
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				errChan <- ctx.Err()
+				return
+			default:
+				msg, err := stream.Recv()
+				if errors.Is(err, io.EOF) {
+					h.logger.Info("client closed inbound stream (EOF)")
+					errChan <- nil
+					return
+				}
+				if err != nil {
+					h.logger.Error("inbound stream receive failed", "err", err)
+					errChan <- err
+					return
+				}
+
+				// Process inbound message
+				h.logger.Debug("received stream frame", "event_id", msg.EventID, "topic", msg.Topic)
+
+				// Echo acknowledge
+				resp := &StreamResponse{
+					EventID:        msg.EventID,
+					Status:         "PROCESSED",
+					AckData:        []byte("ack"),
+					ServerTimeUnix: time.Now().Unix(),
+				}
+				if err := stream.Send(resp); err != nil {
+					errChan <- err
+					return
+				}
+			}
+		}
+	}()
+
+	// 2. Outbound heartbeat & liveness keeper
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case t := <-ticker.C:
+				heartbeat := &StreamResponse{
+					EventID:        fmt.Sprintf("hb_%d", t.Unix()),
+					Status:         "HEARTBEAT",
+					ServerTimeUnix: t.Unix(),
+				}
+				if err := stream.Send(heartbeat); err != nil {
+					h.logger.Warn("heartbeat send failed", "err", err)
+					return
+				}
+			}
+		}
+	}()
+
+	// Await completion or disconnect
+	select {
+	case <-ctx.Done():
+		h.logger.Info("stream terminated by context cancellation")
+		return nil
+	case err := <-errChan:
+		if err != nil && !errors.Is(err, io.EOF) {
+			return status.Errorf(codes.Internal, "stream terminated with error: %v", err)
+		}
+		return nil
+	}
+}

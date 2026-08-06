@@ -1568,3 +1568,136 @@ func (s *AetherScaffoldService) MakeMock(ctx context.Context, startDir, interfac
 
 	return tx.Commit(ctx)
 }
+
+// AddSQLC scaffolds SQLC configuration, base schema, and type-safe query templates.
+func (s *AetherScaffoldService) AddSQLC(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("sqlc", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+
+	// 1. sqlc.yaml configuration in project root
+	yamlContent, err := s.engine.Render(ctx, "plugins/sqlc_yaml.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(projectRoot, "sqlc.yaml"), yamlContent, force, dryRun)
+
+	// 2. Initial SQL schema
+	schemaContent, err := s.engine.Render(ctx, "plugins/sqlc_schema.sql.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(projectRoot, "db", "schema", "001_initial_schema.sql"), schemaContent, force, dryRun)
+
+	// 3. Type-safe query definition
+	queryContent, err := s.engine.Render(ctx, "plugins/sqlc_query.sql.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(projectRoot, "db", "queries", "accounts.sql"), queryContent, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddGRPCStream scaffolds gRPC bi-directional, client, and server streaming RPC handlers and protobuf definition.
+func (s *AetherScaffoldService) AddGRPCStream(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("stream", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+
+	// 1. Protobuf contract definition
+	protoContent, err := s.engine.Render(ctx, "plugins/grpc_stream.proto.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(projectRoot, "api", "proto", "stream", "v1", "stream.proto"), protoContent, force, dryRun)
+
+	// 2. gRPC streaming handler implementation
+	handlerContent, err := s.engine.Render(ctx, "plugins/grpc_stream.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	grpcDir := manifest.Architecture.Paths.HandlerGRPC
+	if grpcDir == "" {
+		grpcDir = filepath.Join("internal", "adapter", "handler", "grpc")
+	}
+	tx.Stage(filepath.Join(projectRoot, grpcDir, "stream_handler.go"), handlerContent, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddGRPCGateway scaffolds gRPC-Gateway reverse-proxy HTTP REST JSON bridge.
+func (s *AetherScaffoldService) AddGRPCGateway(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("gateway", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	httpDir := manifest.Architecture.Paths.HandlerHTTP
+	if httpDir == "" {
+		httpDir = filepath.Join("internal", "adapter", "handler", "http")
+	}
+	destDir := filepath.Join(projectRoot, httpDir)
+
+	content, err := s.engine.Render(ctx, "plugins/grpc_gateway.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "grpc_gateway.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddTenantContext scaffolds multi-tenancy middleware, tenant context extractor, and DB scoping helper.
+func (s *AetherScaffoldService) AddTenantContext(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("tenant", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	pkgDir := manifest.Architecture.Paths.Pkg
+	if pkgDir == "" {
+		pkgDir = "pkg"
+	}
+	destDir := filepath.Join(projectRoot, pkgDir, "tenant")
+
+	content, err := s.engine.Render(ctx, "plugins/tenant_context.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "context.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

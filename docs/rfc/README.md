@@ -22,8 +22,8 @@ Dokumentasi rancangan arsitektur, keputusan sistem (ADR), dan riwayat implementa
 | `20260806-12` | [Phase 10: Tactical Domain-Driven Design (DDD) Code-Gen](20260806-go-aether-phase10-tactical-ddd.md) | Tactical DDD | `feature/v0.8.4-tactical-ddd` | `v0.8.4` | `IMPLEMENTED` | 2026-08-06 |
 | `20260806-13` | [Phase 11: Realtime Protocols & Telecom](20260806-go-aether-phase11-concurrency-resilience.md) | Realtime Networking | `feature/v0.8.5-concurrency-resilience` | `v0.8.5` | `IMPLEMENTED` | 2026-08-06 |
 | `20260806-14` | [Phase 12: Caching & Cloud Storage Engine](20260806-go-aether-phase12-database-storage.md) | Cache & S3 Storage | `feature/v0.8.6-database-storage` | `v0.8.6` | `IMPLEMENTED` | 2026-08-06 |
-| `20260806-15` | [Phase 13: Native QA, Testing, Stress & Chaos Engine](20260806-go-aether-phase13-testing-qa-engine.md) | Testing & Resilience | `feature/v0.8.7-testing-qa-engine` | `v0.8.7` | `PROPOSED` | 2026-08-06 |
-| `20260806-16` | [Phase 14: Enterprise SQLC, Unit of Work & gRPC/GraphQL](20260806-go-aether-phase14-sqlc-grpc-enterprise.md) | SQLC & Protocols | `feature/v0.8.8-sqlc-grpc-enterprise` | `v0.8.8` | `PROPOSED` | Target Q3 2026 |
+| `20260806-15` | [Phase 13: Native QA, Testing, Stress & Chaos Engine](20260806-go-aether-phase13-testing-qa-engine.md) | Testing & Resilience | `feature/v0.8.7-testing-qa-engine` | `v0.8.7` | `IMPLEMENTED` | 2026-08-06 |
+| `20260806-16` | [Phase 14: Enterprise SQLC, Advanced gRPC Streaming & Multi-Tenancy](20260806-go-aether-phase14-enterprise-sqlc-grpc-multitenancy.md) | SQLC, gRPC & Tenant | `feature/v0.8.8-sqlc-grpc-multitenancy` | `v0.8.8` | `PROPOSED` | 2026-08-06 |
 | `20260806-17` | [Phase 15: Concurrency Pipelines, Zero-Trust & Observability](20260806-go-aether-phase15-concurrency-zerotrust.md) | Concurrency & Security | `feature/v0.8.9-concurrency-zerotrust` | `v0.8.9` | `PROPOSED` | Target Q3 2026 |
 
 ---

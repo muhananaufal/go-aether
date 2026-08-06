@@ -1,0 +1,69 @@
+package tenant
+
+import (
+	"context"
+	"errors"
+	"net/http"
+	"strings"
+)
+
+type contextKey string
+
+const (
+	// TenantIDContextKey is the context key used to store the active tenant identifier.
+	TenantIDContextKey contextKey = "aether_tenant_id"
+	// TenantHeaderName is the HTTP header inspected for tenant identification.
+	TenantHeaderName   = "X-Tenant-ID"
+)
+
+var (
+	// ErrMissingTenantID indicates the request did not provide a required tenant identifier.
+	ErrMissingTenantID = errors.New("missing required X-Tenant-ID header")
+	// ErrInvalidTenantID indicates the provided tenant identifier contains illegal characters.
+	ErrInvalidTenantID = errors.New("invalid tenant identifier format")
+)
+
+// WithTenantID returns a derived context containing the scoped tenant ID.
+func WithTenantID(ctx context.Context, tenantID string) context.Context {
+	return context.WithValue(ctx, TenantIDContextKey, tenantID)
+}
+
+// FromContext extracts the active tenant ID from the context.
+func FromContext(ctx context.Context) (string, bool) {
+	val, ok := ctx.Value(TenantIDContextKey).(string)
+	return val, ok && val != ""
+}
+
+// RequireFromContext extracts the active tenant ID or returns ErrMissingTenantID.
+func RequireFromContext(ctx context.Context) (string, error) {
+	tenantID, ok := FromContext(ctx)
+	if !ok || tenantID == "" {
+		return "", ErrMissingTenantID
+	}
+	return tenantID, nil
+}
+
+// Middleware enforces strict tenant isolation on incoming HTTP requests.
+func Middleware(required bool) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			tenantID := strings.TrimSpace(req.Header.Get(TenantHeaderName))
+
+			if tenantID == "" {
+				if required {
+					http.Error(w, `{"error":"unauthorized","message":"missing required X-Tenant-ID header"}`, http.StatusUnauthorized)
+					return
+				}
+			} else {
+				// Prevent path traversal or SQL injection in raw tenant keys
+				if strings.ContainsAny(tenantID, " ;'\"/\\") {
+					http.Error(w, `{"error":"bad_request","message":"invalid tenant format"}`, http.StatusBadRequest)
+					return
+				}
+				req = req.WithContext(WithTenantID(req.Context(), tenantID))
+			}
+
+			next.ServeHTTP(w, req)
+		})
+	}
+}

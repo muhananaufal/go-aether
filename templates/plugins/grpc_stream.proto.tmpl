@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package stream.v1;
+
+option go_package = "{{ .PackagePath }}/api/proto/stream/v1;streamv1";
+
+service StreamService {
+  // Bi-directional duplex streaming RPC for real-time telemetry and messaging
+  rpc DuplexStream(stream StreamMessageRequest) returns (stream StreamMessageResponse);
+
+  // Server-side streaming RPC for event subscriptions
+  rpc SubscribeEvents(SubscribeRequest) returns (stream StreamMessageResponse);
+
+  // Client-side streaming RPC for bulk payload ingestion
+  rpc BulkUpload(stream StreamMessageRequest) returns (BulkUploadResponse);
+}
+
+message StreamMessageRequest {
+  string event_id = 1;
+  string topic = 2;
+  bytes payload = 3;
+  int64 timestamp_unix = 4;
+  map<string, string> metadata = 5;
+}
+
+message StreamMessageResponse {
+  string event_id = 1;
+  string status = 2;
+  bytes ack_data = 3;
+  int64 server_time_unix = 4;
+}
+
+message SubscribeRequest {
+  string client_id = 1;
+  repeated string topics = 2;
+}
+
+message BulkUploadResponse {
+  int32 total_processed = 1;
+  int32 total_failed = 2;
+  string message = 3;
+}

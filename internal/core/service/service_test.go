@@ -176,3 +176,78 @@ func TestAetherScaffoldService_Phase13_TestingAndQASuite(t *testing.T) {
 		t.Error("expected mocks/mock_paymentgateway.go to exist")
 	}
 }
+
+func TestAetherScaffoldService_Phase14_SQLC_GRPC_MultiTenancy(t *testing.T) {
+	memFS := afero.NewMemMapFs()
+	w := writer.NewAferoWriter(memFS)
+	resolver := manifest.NewYamlResolver(w)
+
+	mockEmbed := fstest.MapFS{
+		"common/aether_yaml.tmpl":               &fstest.MapFile{Data: []byte("version: \"1\"")},
+		"plugins/sqlc_yaml.tmpl":                &fstest.MapFile{Data: []byte("version: \"2\"")},
+		"plugins/sqlc_schema.sql.tmpl":          &fstest.MapFile{Data: []byte("CREATE TABLE accounts ();")},
+		"plugins/sqlc_query.sql.tmpl":           &fstest.MapFile{Data: []byte("-- name: GetAccountByID :one\nSELECT 1;")},
+		"plugins/grpc_stream.proto.tmpl":        &fstest.MapFile{Data: []byte("syntax = \"proto3\";")},
+		"plugins/grpc_stream.go.tmpl":           &fstest.MapFile{Data: []byte("package grpc\n// stream handler")},
+		"plugins/grpc_gateway.go.tmpl":          &fstest.MapFile{Data: []byte("package http\n// grpc gateway")},
+		"plugins/tenant_context.go.tmpl":        &fstest.MapFile{Data: []byte("package tenant\n// tenant context")},
+	}
+
+	engine := template.NewStdEngine(mockEmbed)
+	svc := service.NewAetherScaffoldService(engine, resolver, w)
+	ctx := context.Background()
+	projectDir := "/projects/enterprise-app"
+	_ = w.MkdirAll(projectDir)
+
+	if err := svc.InitProject(ctx, projectDir, "enterprise-app", "github.com/enterprise/app", "hexagonal", "postgres", "chi", false); err != nil {
+		t.Fatalf("InitProject failed: %v", err)
+	}
+
+	// 1. AddSQLC
+	if err := svc.AddSQLC(ctx, projectDir, false, false); err != nil {
+		t.Fatalf("AddSQLC failed: %v", err)
+	}
+	exists, _ := w.Exists("/projects/enterprise-app/sqlc.yaml")
+	if !exists {
+		t.Error("expected sqlc.yaml to exist")
+	}
+	exists, _ = w.Exists("/projects/enterprise-app/db/schema/001_initial_schema.sql")
+	if !exists {
+		t.Error("expected db/schema/001_initial_schema.sql to exist")
+	}
+	exists, _ = w.Exists("/projects/enterprise-app/db/queries/accounts.sql")
+	if !exists {
+		t.Error("expected db/queries/accounts.sql to exist")
+	}
+
+	// 2. AddGRPCStream
+	if err := svc.AddGRPCStream(ctx, projectDir, false, false); err != nil {
+		t.Fatalf("AddGRPCStream failed: %v", err)
+	}
+	exists, _ = w.Exists("/projects/enterprise-app/api/proto/stream/v1/stream.proto")
+	if !exists {
+		t.Error("expected api/proto/stream/v1/stream.proto to exist")
+	}
+	exists, _ = w.Exists("/projects/enterprise-app/internal/adapter/handler/grpc/stream_handler.go")
+	if !exists {
+		t.Error("expected internal/adapter/handler/grpc/stream_handler.go to exist")
+	}
+
+	// 3. AddGRPCGateway
+	if err := svc.AddGRPCGateway(ctx, projectDir, false, false); err != nil {
+		t.Fatalf("AddGRPCGateway failed: %v", err)
+	}
+	exists, _ = w.Exists("/projects/enterprise-app/internal/adapter/handler/http/grpc_gateway.go")
+	if !exists {
+		t.Error("expected internal/adapter/handler/http/grpc_gateway.go to exist")
+	}
+
+	// 4. AddTenantContext
+	if err := svc.AddTenantContext(ctx, projectDir, false, false); err != nil {
+		t.Fatalf("AddTenantContext failed: %v", err)
+	}
+	exists, _ = w.Exists("/projects/enterprise-app/pkg/tenant/context.go")
+	if !exists {
+		t.Error("expected pkg/tenant/context.go to exist")
+	}
+}

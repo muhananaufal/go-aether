@@ -261,4 +261,16 @@ type ScaffoldService interface {
 
 	// MakeMock scaffolds interface mock implementation using Mockery directives.
 	MakeMock(ctx context.Context, startDir, interfaceName string, dryRun, force bool) error
+
+	// AddSQLC scaffolds SQLC configuration, base schema, and type-safe query templates.
+	AddSQLC(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddGRPCStream scaffolds gRPC bi-directional, client, and server streaming RPC handlers and protobuf definition.
+	AddGRPCStream(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddGRPCGateway scaffolds gRPC-Gateway reverse-proxy HTTP REST JSON bridge.
+	AddGRPCGateway(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddTenantContext scaffolds multi-tenancy middleware, tenant context extractor, and DB scoping helper.
+	AddTenantContext(ctx context.Context, startDir string, dryRun, force bool) error
 }

@@ -100,6 +100,10 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newTestContainerCommand(svc, &flags))
 	rootCmd.AddCommand(newTestMutationCommand(svc, &flags))
 	rootCmd.AddCommand(newMakeMockCommand(svc, &flags))
+	rootCmd.AddCommand(newAddSQLCCommand(svc, &flags))
+	rootCmd.AddCommand(newAddGRPCStreamCommand(svc, &flags))
+	rootCmd.AddCommand(newAddGRPCGatewayCommand(svc, &flags))
+	rootCmd.AddCommand(newAddTenantContextCommand(svc, &flags))
 
 	return rootCmd
 }

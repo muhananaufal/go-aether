@@ -1,0 +1,67 @@
+package http
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"time"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+// GatewayConfig holds configuration for the HTTP-to-gRPC reverse proxy.
+type GatewayConfig struct {
+	HTTPPort    int    // Port to serve HTTP/JSON REST endpoints (e.g. 8080)
+	GRPCAddress string // Target backend gRPC server address (e.g. "localhost:50051")
+}
+
+// DefaultGatewayConfig returns standard local ports for gRPC-Gateway.
+func DefaultGatewayConfig() GatewayConfig {
+	return GatewayConfig{
+		HTTPPort:    8080,
+		GRPCAddress: "localhost:50051",
+	}
+}
+
+// NewGatewayServer creates a high-performance HTTP reverse proxy bridging REST to gRPC.
+func NewGatewayServer(ctx context.Context, cfg GatewayConfig) (*http.Server, error) {
+	mux := runtime.NewServeMux(
+		runtime.WithIncomingHeaderMatcher(customHeaderMatcher),
+		runtime.WithErrorHandler(customErrorHandler),
+	)
+
+	opts := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	}
+
+	// Example registration point:
+	// err := streamv1.RegisterStreamServiceHandlerFromEndpoint(ctx, mux, cfg.GRPCAddress, opts)
+	_ = opts
+
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", cfg.HTTPPort),
+		Handler:      mux,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  120 * time.Second,
+	}
+
+	return srv, nil
+}
+
+// customHeaderMatcher propagates custom headers (e.g. X-Tenant-ID, X-Trace-ID) to gRPC metadata.
+func customHeaderMatcher(key string) (string, bool) {
+	switch key {
+	case "X-Tenant-Id", "X-Tenant-ID", "X-Trace-Id", "X-Trace-ID", "X-Request-Id", "X-Request-ID":
+		return key, true
+	default:
+		return runtime.DefaultHeaderMatcher(key)
+	}
+}
+
+// customErrorHandler maps gRPC error codes to structured JSON HTTP responses.
+func customErrorHandler(ctx context.Context, mux *runtime.ServeMux, marshaler runtime.Marshaler, w http.ResponseWriter, req *http.Request, err error) {
+	runtime.DefaultHTTPErrorHandler(ctx, mux, marshaler, w, req, err)
+}
