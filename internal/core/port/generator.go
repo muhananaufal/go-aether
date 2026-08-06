@@ -141,4 +141,22 @@ type ScaffoldService interface {
 
 	// AddDiscovery scaffolds service discovery registration client (Consul or etcd).
 	AddDiscovery(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddAuth scaffolds authentication handlers and middleware (OAuth2 or APIKey).
+	AddAuth(ctx context.Context, startDir, authType string, dryRun, force bool) error
+
+	// AddStorage scaffolds cloud blob storage interface and S3/MinIO adapter.
+	AddStorage(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddCron scaffolds in-process recurring background job scheduler.
+	AddCron(ctx context.Context, startDir, jobName string, dryRun, force bool) error
+
+	// AddMailer scaffolds transactional email delivery client.
+	AddMailer(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddFirebase scaffolds Firebase Auth token verifier and FCM push messaging client.
+	AddFirebase(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddLogger scaffolds structured JSON logger with context correlation tracking.
+	AddLogger(ctx context.Context, startDir, provider string, dryRun, force bool) error
 }

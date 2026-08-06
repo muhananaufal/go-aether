@@ -1,7 +1,7 @@
 <p align="center">
   <h1 align="center">🚀 go-aether</h1>
   <p align="center">
-    <strong>Lightning-fast, Zero-Runtime Dependency, Opinionated Architecture Scaffold CLI Engine for Go.</strong>
+    <strong>Lightning-fast, Zero-Runtime Dependency, Opinionated Enterprise Architecture CLI Engine for Go.</strong>
   </p>
   <p align="center">
     <a href="https://github.com/muhananaufal/go-aether/actions"><img src="https://img.shields.io/github/actions/workflow/status/muhananaufal/go-aether/ci.yml?branch=main&style=flat-square" alt="Build Status"></a>
@@ -13,99 +13,167 @@
 
 ---
 
-**`go-aether`** is an advanced developer tool designed for Go Backend Engineers. It eliminates the repetitive boilerplate of setting up Hexagonal (Ports & Adapters) architectures by scaffolding clean, structurally sound, and production-ready modules in milliseconds.
+**`go-aether`** is a high-performance, developer-first CLI engine designed for modern Go Backend Engineers and Enterprise Architects. It eliminates the friction of boilerplate construction by scaffolding production-grade, strictly typed **Hexagonal (Ports & Adapters)** and **Domain-Driven Design (DDD)** architectures in milliseconds.
 
-Unlike heavy web frameworks, `go-aether` is **strictly a Dev-Time CLI**. It embeds standard `text/template` files into a single binary, meaning the generated code uses pure Go standard libraries and your chosen dependencies (like `chi` or `pgx`) with **absolute zero runtime lock-in** to `go-aether` itself.
+Unlike heavy opinionated frameworks, `go-aether` is **strictly a Dev-Time Scaffolding Tool**. It embeds clean standard `text/template` files into a single binary, generating pure, unencumbered Go code with **zero runtime lock-in**.
 
-## ✨ Features
+---
 
-- 🏗️ **Hexagonal Architecture Native:** Enforces Domain, Port, Service, and Adapter layer isolation automatically.
-- ⚡ **Zero Runtime Bloat:** Generated code belongs to you. No hidden framework dependencies.
-- 📦 **Vertical Slice Scaffolding:** Generate a full feature (Domain entity, interface contracts, service use-cases, HTTP handlers, and Postgres repos) with a single command.
-- 🛡️ **Transactional Disk Buffer:** If a file generation fails midway, the CLI rolls back all writes automatically to prevent a corrupted Git tree.
-- 🩺 **Aether Doctor:** Built-in structural diagnostics to ensure your project's integrity hasn't drifted from the manifest.
+## ✨ Core Highlights & Capabilities
+
+- 🏗️ **Hexagonal Architecture (Ports & Adapters)**: Automatic separation of concerns across Domain, Port, Service, and Adapter layers.
+- ⚡ **Zero-Runtime Overhead**: The generated code is 100% native Go. No external runtime frameworks required.
+- 🛡️ **Transactional Disk Buffer**: Atomic multi-file writes with automatic rollback on generation error.
+- 🩺 **Aether Doctor**: Built-in AST structural diagnostics against the Single Source of Truth (`aether.yaml`).
+- 🔄 **Distributed Systems Ready**: Out-of-the-box CQRS, Transactional Outbox, Distributed Saga Orchestrator, and HMAC Signed Webhooks.
+- ☁️ **Cloud Native & Plugins**: Native AWS S3, OAuth2 / API Key, In-Process Cron Scheduler, Mailer, Firebase Auth/FCM, and OpenTelemetry Tracing.
+- 🔍 **Brownfield AST Adoption**: Scan legacy Go codebases and seamlessly adopt them into the Aether manifest.
+
+---
 
 ## 🚀 Installation
 
-Install the latest version seamlessly via the Go toolchain:
+Install the latest stable release via the standard Go toolchain:
 
 ```bash
 go install github.com/muhananaufal/go-aether@latest
 ```
-*(Ensure `$(go env GOPATH)/bin` is appended to your `$PATH`)*
+
+*(Ensure `$(go env GOPATH)/bin` is in your system `$PATH`)*
+
+---
 
 ## 📖 Quick Start
 
-### 1. Initialize a New Greenfield Project
-Run `init` to bootstrap your base architecture directory and generate the Single Source of Truth manifest (`aether.yaml`).
+### 1. Initialize a New Project
+Bootstrap a clean architecture workspace and generate the master `aether.yaml` manifest:
 
 ```bash
-mkdir my-enterprise-api
-cd my-enterprise-api
-
-# Bootstrap Hexagonal Architecture (defaults to chi router & postgres)
-go-aether init my-enterprise-api
+mkdir my-service && cd my-service
+go-aether init my-service --arch hexagonal --router chi --db postgres
 ```
 
-### 2. Scaffold a Vertical Module
-Generate a complete feature slice (e.g., `user` or `order`). `go-aether` handles the wiring of Domain logic, Interface Ports, Service Orchestrators, HTTP Handlers, and DB Repositories.
+### 2. Scaffold Vertical Domain Modules
+Generate a complete vertical slice (`order`) including Domain Entities, Ports, Service Orchestrator, HTTP Handler, and Postgres Repository:
 
 ```bash
 go-aether make:module order --transports http
 ```
 
-### 3. Verify Structural Health
-Run the built-in diagnostic tool to validate your project's compliance against the `aether.yaml` schema.
+### 3. Inject Distributed Patterns & Middlewares
+Effortlessly add production-grade patterns into your codebase:
+
+```bash
+# Add CQRS Handlers & Command Bus for the Order domain
+go-aether add:cqrs order
+
+# Add Transactional Outbox pattern & SQL migrations
+go-aether add:outbox
+
+# Add Distributed Saga Workflow with compensation
+go-aether add:saga checkout
+
+# Add HMAC-SHA256 Signed Webhook Dispatcher & Receiver
+go-aether add:webhook
+
+# Add Cloud Storage (AWS S3 / MinIO) and In-process Cron Scheduler
+go-aether add:storage s3
+go-aether add:cron cleanup_orders
+```
+
+### 4. Run Structural Diagnostics
+Verify your project's architectural compliance and detect drift:
 
 ```bash
 go-aether doctor
 ```
 
-## 📂 Generated Architecture Layout
+---
 
-When you scaffold a module (e.g., `order`), `go-aether` injects the code into the strict Hexagonal layers:
+## 🗺️ Complete CLI Command Taxonomy (v0.8.0)
+
+### 🔨 Core Generators (`make:*` & `init`)
+| Command | Description | Example |
+| :--- | :--- | :--- |
+| `init [name]` | Initialize project layout & `aether.yaml` | `go-aether init e-commerce` |
+| `make:module [name]` | Scaffold complete vertical domain slice | `go-aether make:module payment` |
+| `make:repository [name]` | Scaffold standalone persistence repository | `go-aether make:repository order` |
+| `make:domain [name]` | Scaffold pure domain entity & value objects | `go-aether make:domain user` |
+| `make:migration [name]` | Generate SQL migration pair (Goose / Golang-Migrate) | `go-aether make:migration add_users` |
+| `make:seeder [name]` | Generate database dummy data seeder | `go-aether make:seeder initial_users` |
+
+### ⚡ Distributed Patterns & Infrastructure (`add:*`)
+| Command | Description | Example |
+| :--- | :--- | :--- |
+| `add:cqrs [module]` | In-module Command & Query Handlers + Bus | `go-aether add:cqrs order` |
+| `add:outbox` | Transactional Outbox engine & SQL migration | `go-aether add:outbox` |
+| `add:saga [workflow]` | Distributed Saga orchestrator & rollback | `go-aether add:saga checkout` |
+| `add:webhook` | HMAC-SHA256 signed webhook engine | `go-aether add:webhook` |
+| `add:discovery [provider]` | Service discovery client (Consul / etcd) | `go-aether add:discovery consul` |
+| `add:cache [provider]` | High-performance caching layer (Redis / Valkey) | `go-aether add:cache redis` |
+| `add:worker [provider]` | Asynchronous task queue (Asynq / River) | `go-aether add:worker asynq` |
+| `add:eventing [provider]` | Event streaming broker (Kafka / RabbitMQ) | `go-aether add:eventing kafka` |
+
+### ☁️ Cloud, Auth, Diagnostics & Plugins
+| Command | Description | Example |
+| :--- | :--- | :--- |
+| `add:auth [type]` | Authentication provider (OAuth2 / API Key) | `go-aether add:auth oauth2` |
+| `add:storage [provider]` | Cloud blob storage abstraction (S3 / GCS / Local) | `go-aether add:storage s3` |
+| `add:cron [job-name]` | In-process recurring job scheduler | `go-aether add:cron report_job` |
+| `add:mailer [provider]` | Transactional email client (SMTP / Resend) | `go-aether add:mailer smtp` |
+| `add:firebase` | Firebase Auth & FCM push notifications | `go-aether add:firebase` |
+| `add:logger [provider]` | Structured JSON logger with trace correlation | `go-aether add:logger slog` |
+| `add:tracing [provider]` | OpenTelemetry tracing exporter | `go-aether add:tracing otel` |
+| `add:metrics [provider]` | Prometheus metric collectors | `go-aether add:metrics prometheus` |
+| `add:deploy [target]` | Cloud deployment manifests (K8s, Helm, Lambda) | `go-aether add:deploy k8s` |
+| `add:cicd [provider]` | Automated CI/CD workflows (GitHub Actions / GitLab) | `go-aether add:cicd github` |
+| `add:ai [provider]` | AI / LLM gateway client (OpenAI, Anthropic, Ollama) | `go-aether add:ai openai` |
+| `add:multitenancy [module]` | Row Level Security (RLS) tenant isolation | `go-aether add:multitenancy customer` |
+| `add:test` | Integration test suite & mocking harness | `go-aether add:test` |
+| `adopt [--scan]` | Scan legacy project and create `aether.yaml` | `go-aether adopt --scan` |
+| `doctor` | Structural health and integrity check | `go-aether doctor` |
+
+---
+
+## 📂 Architecture Layout
 
 ```text
-my-enterprise-api/
-├── aether.yaml                     <-- Project Single Source of Truth
-└── internal/
-    ├── core/                       <-- Inner Layer (Independent)
-    │   ├── domain/
-    │   │   └── order.go            <-- Pure Domain Entities & Validation
-    │   ├── port/
-    │   │   └── order_port.go       <-- Inbound & Outbound Interfaces
-    │   └── service/
-    │       └── order_service.go    <-- Business Logic & Orchestration
-    └── adapter/                    <-- Outer Layer (Dependencies)
-        ├── handler/http/
-        │   └── order_handler.go    <-- HTTP Transport Controller
-        └── repository/
-            └── order_repository.go <-- DB Persistence Implementation
+my-service/
+├── aether.yaml                     <-- Single Source of Truth Manifest
+├── cmd/
+│   └── api/
+│       └── main.go                 <-- Application Entrypoint
+├── internal/
+│   ├── core/
+│   │   ├── domain/                 <-- Pure Business Logic & Structs
+│   │   ├── port/                   <-- Inbound & Outbound Interfaces
+│   │   └── service/                <-- Use Cases & Application Services
+│   ├── adapter/
+│   │   ├── handler/http/           <-- HTTP Controllers
+│   │   └── repository/             <-- Database Implementations
+│   ├── jobs/                       <-- Background Cron Workloads
+│   └── workflows/                  <-- Saga Workflows
+├── pkg/
+│   ├── auth/                       <-- OAuth2 & API Key Validators
+│   ├── cron/                       <-- Job Schedulers
+│   ├── discovery/                  <-- Consul & etcd Clients
+│   ├── firebase/                   <-- Firebase Auth & Push
+│   ├── logger/                     <-- Slog Correlation Handler
+│   ├── mailer/                     <-- Transactional Mailer
+│   ├── outbox/                     <-- Transactional Outbox Engine
+│   ├── saga/                       <-- Saga Orchestrator Core
+│   ├── storage/                    <-- S3 Cloud Storage
+│   └── webhook/                    <-- HMAC Webhook Engine
+└── migrations/                     <-- SQL Migrations
 ```
 
-## 🛠️ Commands Reference
-
-| Command | Description | Example |
-|---|---|---|
-| `init` | Bootstraps a new repository layout and manifests. | `go-aether init api` |
-| `make:module` | Generates a full domain slice across all layers. | `go-aether make:module payment` |
-| `doctor` | Runs structural diagnostics and schema validation. | `go-aether doctor` |
-| `adopt` | Adopts an existing legacy project into aether. | `go-aether adopt --scan` |
-
-### Global Flags
-- `--dry-run`: Simulates the command without actually writing files to the disk.
-- `-v, --verbose`: Enables verbose debug logging.
-
-## 🤝 Contributing
-
-We welcome contributions! Please feel free to submit a Pull Request or open an Issue to discuss potential changes.
-All tests must pass in the CI/CD pipeline before merging.
+---
 
 ## 📜 License
 
-This project is licensed under the [MIT License](LICENSE) © 2026 muhananaufal.
+This project is open-sourced under the [MIT License](LICENSE) © 2026 muhananaufal.
 
 ---
 <p align="center">
-  <i>Built with precision for Go Artisans by AETHERIS.</i>
+  <i>Engineered with extreme precision for Go Artisans by AETHERIS.</i>
 </p>

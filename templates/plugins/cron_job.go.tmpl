@@ -1,0 +1,48 @@
+package jobs
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"time"
+)
+
+// {{ .ModuleNameTitle }}Job implements background scheduled maintenance logic.
+type {{ .ModuleNameTitle }}Job struct {
+	logger *slog.Logger
+}
+
+// New{{ .ModuleNameTitle }}Job constructs the job instance.
+func New{{ .ModuleNameTitle }}Job(logger *slog.Logger) *{{ .ModuleNameTitle }}Job {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &{{ .ModuleNameTitle }}Job{logger: logger}
+}
+
+// Name returns the unique identifier for the job.
+func (j *{{ .ModuleNameTitle }}Job) Name() string {
+	return "{{ .ModuleNamePkg }}_job"
+}
+
+// Interval specifies execution frequency.
+func (j *{{ .ModuleNameTitle }}Job) Interval() time.Duration {
+	return 15 * time.Minute
+}
+
+// Run executes the job workload.
+func (j *{{ .ModuleNameTitle }}Job) Run(ctx context.Context) error {
+	j.logger.Info("Starting execution of {{ .ModuleNameTitle }}Job", "timestamp", time.Now().UTC())
+	
+	// Execute job workload
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	default:
+		// Workload logic here
+		fmt.Println("Running {{ .ModuleNameTitle }}Job work cycle")
+	}
+
+	j.logger.Info("Successfully completed {{ .ModuleNameTitle }}Job execution")
+	return nil
+}

@@ -11,6 +11,7 @@ Dokumentasi rancangan arsitektur, keputusan sistem (ADR), dan riwayat implementa
 | `20260806-05` | [Phase 5: Core Enterprise Patterns](20260806-go-aether-phase5-core-patterns.md) | Architectural Patterns | `feature/phase5-core-patterns` | `IMPLEMENTED` | 2026-08-06 |
 | `20260806-06` | [Phase 6: Data, Migration & QA](20260806-go-aether-phase6-data-qa.md) | Database & Test | `feature/phase6-data-qa` | `IMPLEMENTED` | 2026-08-06 |
 | `20260806-07` | [Phase 7: Advanced Distributed Patterns](20260806-go-aether-phase7-distributed-patterns.md) | Distributed Patterns | `feature/phase7-distributed-patterns` | `IMPLEMENTED` | 2026-08-06 |
+| `20260806-08` | [Phase 8: Cloud, Auth & 3rd-Party Plugins](20260806-go-aether-phase8-cloud-plugins.md) | Plugins & Ecosystem | `feature/phase8-cloud-plugins` | `IMPLEMENTED` | 2026-08-06 |
 
 ### 🗺️ ROADMAP: The 8 Phases of Evolution
 Proyek `go-aether` dibagi menjadi 8 tonggak pencapaian besar (Target Production Release di `v1.0.0`):
@@ -21,7 +22,7 @@ Proyek `go-aether` dibagi menjadi 8 tonggak pencapaian besar (Target Production 
 - **Fase 5: Core Enterprise Patterns (v0.5.0)** — Ekspansi ke `make:repository`, `make:domain`, `add:di`, `add:config`, dan standar *error/validation*. *(SELESAI)*
 - **Fase 6: Data, Migration & QA (v0.6.0)** — Database migration (`make:migration`), *seeder*, tes komprehensif (`add:test`), dan multitenancy. *(SELESAI)*
 - **Fase 7: Advanced Distributed Patterns (v0.7.0)** — Injeksi CQRS, Saga/Temporal, Outbox, Webhook, dan Service Discovery. *(SELESAI)*
-- **Fase 8: Cloud, Auth & 3rd-Party Plugins (v0.8.0)** — Otentikasi Oauth2, S3 Storage, Cron, Mailer, Firebase, dan Logger. *(TERJADWAL)*
+- **Fase 8: Cloud, Auth & 3rd-Party Plugins (v0.8.0)** — Otentikasi Oauth2, S3 Storage, Cron, Mailer, Firebase, dan Logger. *(SELESAI)*
 
 ### Panduan Siklus Status RFC:
 * `PROPOSED`: Sedang dalam tahap perancangan & review (menunggu "Gasskan").

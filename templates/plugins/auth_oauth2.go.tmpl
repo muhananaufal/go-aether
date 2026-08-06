@@ -1,0 +1,57 @@
+package auth
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"golang.org/x/oauth2"
+)
+
+// OAuthProvider defines metadata and endpoints for an OAuth2 provider.
+type OAuthProvider struct {
+	Config *oauth2.Config
+}
+
+// NewOAuthProvider initializes an OAuth2 provider client.
+func NewOAuthProvider(clientID, clientSecret, redirectURL string, scopes []string, endpoint oauth2.Endpoint) *OAuthProvider {
+	return &OAuthProvider{
+		Config: &oauth2.Config{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			RedirectURL:  redirectURL,
+			Scopes:       scopes,
+			Endpoint:     endpoint,
+		},
+	}
+}
+
+// GetAuthURL generates the authorization URL with state CSRF token.
+func (p *OAuthProvider) GetAuthURL(state string) string {
+	return p.Config.AuthCodeURL(state, oauth2.AccessTypeOffline)
+}
+
+// ExchangeToken exchanges code for oauth2.Token.
+func (p *OAuthProvider) ExchangeToken(ctx context.Context, code string) (*oauth2.Token, error) {
+	if code == "" {
+		return nil, errors.New("authorization code cannot be empty")
+	}
+	return p.Config.Exchange(ctx, code)
+}
+
+// FetchUserInfo fetches user info JSON using the exchanged access token.
+func (p *OAuthProvider) FetchUserInfo(ctx context.Context, token *oauth2.Token, userInfoURL string, target any) error {
+	client := p.Config.Client(ctx, token)
+	resp, err := client.Get(userInfoURL)
+	if err != nil {
+		return fmt.Errorf("failed to fetch user info: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("user info endpoint returned status: %d", resp.StatusCode)
+	}
+
+	return json.NewDecoder(resp.Body).Decode(target)
+}

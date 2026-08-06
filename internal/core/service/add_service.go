@@ -636,3 +636,183 @@ func (s *AetherScaffoldService) AddDiscovery(ctx context.Context, startDir, prov
 
 	return tx.Commit(ctx)
 }
+
+// AddAuth scaffolds authentication handlers and middleware (OAuth2 or APIKey).
+func (s *AetherScaffoldService) AddAuth(ctx context.Context, startDir, authType string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	authTypeLower := strings.ToLower(authType)
+	if authTypeLower != "oauth2" && authTypeLower != "apikey" {
+		return fmt.Errorf("unsupported auth type '%s', must be 'oauth2' or 'apikey'", authType)
+	}
+
+	data, err := domain.NewTemplateData(authTypeLower, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	authDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "auth")
+
+	templateName := fmt.Sprintf("plugins/auth_%s.go.tmpl", authTypeLower)
+	content, err := s.engine.Render(ctx, templateName, data)
+	if err != nil {
+		return err
+	}
+
+	destFile := filepath.Join(authDir, fmt.Sprintf("%s.go", authTypeLower))
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddStorage scaffolds cloud blob storage interface and S3/MinIO adapter.
+func (s *AetherScaffoldService) AddStorage(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	providerLower := strings.ToLower(provider)
+	if providerLower != "s3" && providerLower != "gcs" && providerLower != "local" {
+		providerLower = "s3"
+	}
+
+	data, err := domain.NewTemplateData(providerLower, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	storageDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "storage")
+
+	// Render pkg/storage/storage.go
+	ifaceContent, err := s.engine.Render(ctx, "plugins/storage_interface.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(storageDir, "storage.go"), ifaceContent, force, dryRun)
+
+	// Render pkg/storage/s3.go
+	s3Content, err := s.engine.Render(ctx, "plugins/storage_s3.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(storageDir, fmt.Sprintf("%s.go", providerLower)), s3Content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddCron scaffolds in-process recurring background job scheduler.
+func (s *AetherScaffoldService) AddCron(ctx context.Context, startDir, jobName string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(jobName, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	cronDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "cron")
+	jobsDir := filepath.Join(projectRoot, "internal", "jobs")
+
+	// Render pkg/cron/scheduler.go
+	schedContent, err := s.engine.Render(ctx, "plugins/cron_scheduler.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(cronDir, "scheduler.go"), schedContent, force, dryRun)
+
+	// Render internal/jobs/<job>_job.go
+	jobContent, err := s.engine.Render(ctx, "plugins/cron_job.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(jobsDir, fmt.Sprintf("%s_job.go", data.ModuleNamePkg)), jobContent, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddMailer scaffolds transactional email delivery client.
+func (s *AetherScaffoldService) AddMailer(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(provider, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	mailerDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "mailer")
+
+	content, err := s.engine.Render(ctx, "plugins/mailer.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(mailerDir, "mailer.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddFirebase scaffolds Firebase Auth token verifier and FCM push messaging client.
+func (s *AetherScaffoldService) AddFirebase(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("firebase", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	fbDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "firebase")
+
+	content, err := s.engine.Render(ctx, "plugins/firebase.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(fbDir, "firebase.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddLogger scaffolds structured JSON logger with context correlation tracking.
+func (s *AetherScaffoldService) AddLogger(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(provider, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	loggerDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "logger")
+
+	content, err := s.engine.Render(ctx, "plugins/logger.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(loggerDir, "logger.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

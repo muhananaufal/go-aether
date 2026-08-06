@@ -1,0 +1,70 @@
+package firebase
+
+import (
+	"context"
+	"fmt"
+
+	firebase "firebase.google.com/go/v4"
+	"firebase.google.com/go/v4/auth"
+	"firebase.google.com/go/v4/messaging"
+	"google.golang.org/api/option"
+)
+
+// Client wraps Firebase Auth and Cloud Messaging (FCM) capabilities.
+type Client struct {
+	app       *firebase.App
+	auth      *auth.Client
+	messaging *messaging.Client
+}
+
+// NewClient initializes the Firebase client from a credentials JSON file.
+func NewClient(ctx context.Context, serviceAccountKeyPath string) (*Client, error) {
+	opt := option.WithCredentialsFile(serviceAccountKeyPath)
+	app, err := firebase.NewApp(ctx, nil, opt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize firebase app: %w", err)
+	}
+
+	authClient, err := app.Auth(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize firebase auth: %w", err)
+	}
+
+	messagingClient, err := app.Messaging(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize firebase messaging: %w", err)
+	}
+
+	return &Client{
+		app:       app,
+		auth:      authClient,
+		messaging: messagingClient,
+	}, nil
+}
+
+// VerifyIDToken decodes and validates a Firebase JWT ID token from the client.
+func (c *Client) VerifyIDToken(ctx context.Context, idToken string) (*auth.Token, error) {
+	token, err := c.auth.VerifyIDToken(ctx, idToken)
+	if err != nil {
+		return nil, fmt.Errorf("invalid firebase token: %w", err)
+	}
+	return token, nil
+}
+
+// SendPushNotification sends a targeted FCM message to a device registration token.
+func (c *Client) SendPushNotification(ctx context.Context, deviceToken, title, body string, data map[string]string) (string, error) {
+	message := &messaging.Message{
+		Token: deviceToken,
+		Notification: &messaging.Notification{
+			Title: title,
+			Body:  body,
+		},
+		Data: data,
+	}
+
+	response, err := c.messaging.Send(ctx, message)
+	if err != nil {
+		return "", fmt.Errorf("failed to send fcm message: %w", err)
+	}
+	return response, nil
+}
