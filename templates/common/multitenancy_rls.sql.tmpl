@@ -1,0 +1,11 @@
+-- Enable Row Level Security (RLS) for multitenancy
+-- Target Table: {{ .ModuleNamePkg }}s
+
+ALTER TABLE {{ .ModuleNamePkg }}s ENABLE ROW LEVEL SECURITY;
+
+-- Policy to ensure tenants can only see their own data
+CREATE POLICY tenant_isolation_policy ON {{ .ModuleNamePkg }}s
+    USING (tenant_id = current_setting('app.current_tenant_id')::VARCHAR);
+
+-- To apply this setting in your Go code before executing a query:
+-- SET LOCAL app.current_tenant_id = 'your-tenant-id';

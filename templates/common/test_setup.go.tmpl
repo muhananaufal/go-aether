@@ -1,0 +1,23 @@
+package tests
+
+import (
+	"testing"
+	"github.com/stretchr/testify/suite"
+)
+
+// BaseTestSuite provides common setup/teardown functionality for integration tests.
+type BaseTestSuite struct {
+	suite.Suite
+}
+
+func (suite *BaseTestSuite) SetupSuite() {
+	// Initialize database connection, config, etc.
+}
+
+func (suite *BaseTestSuite) TearDownSuite() {
+	// Clean up resources
+}
+
+func TestBaseSuite(t *testing.T) {
+	suite.Run(t, new(BaseTestSuite))
+}

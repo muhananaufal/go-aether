@@ -403,5 +403,58 @@ func (s *AetherScaffoldService) AddValidator(ctx context.Context, startDir, vali
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "common", "validator.go")
 	
 	tx.Stage(destFile, content, force, dryRun)
+	tx.Stage(destFile, content, force, dryRun)
+	return tx.Commit(ctx)
+}
+
+// AddTest scaffolds standard integration test setup and helpers.
+func (s *AetherScaffoldService) AddTest(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("tests", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	
+	content, err := s.engine.Render(ctx, "common/test_setup.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+
+	destFile := filepath.Join(projectRoot, "tests", "setup.go")
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddMultitenancy scaffolds Row Level Security (RLS) SQL policies for tenant isolation.
+func (s *AetherScaffoldService) AddMultitenancy(ctx context.Context, startDir, moduleName string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(moduleName, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	
+	content, err := s.engine.Render(ctx, "common/multitenancy_rls.sql.tmpl", data)
+	if err != nil {
+		return err
+	}
+
+	destFile := filepath.Join(projectRoot, "migrations", fmt.Sprintf("rls_%s.sql", strings.ToLower(moduleName)))
+	tx.Stage(destFile, content, force, dryRun)
+
 	return tx.Commit(ctx)
 }

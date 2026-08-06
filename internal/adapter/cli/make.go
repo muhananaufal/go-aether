@@ -177,3 +177,57 @@ func newMakeRepositoryCommand(svc port.ScaffoldService, globals *globalFlags) *c
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
 	return cmd
 }
+
+func newMakeMigrationCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:migration [name]",
+		Short: "Generate a SQL migration file pair (up/down)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakeMigration(cmd.Context(), cwd, name, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("✨ Generated migration files for [%s]\n", name)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
+	return cmd
+}
+
+func newMakeSeederCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:seeder [name]",
+		Short: "Generate a database seeder file",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakeSeeder(cmd.Context(), cwd, name, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("✨ Generated database seeder for [%s]\n", name)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
+	return cmd
+}

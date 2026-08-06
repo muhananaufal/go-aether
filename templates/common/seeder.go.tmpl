@@ -1,0 +1,15 @@
+package seeder
+
+import (
+	"context"
+	"log"
+)
+
+// Seed{{ .ModuleNameTitle }}s populates initial data for {{ .ModuleNameTitle }}.
+func Seed{{ .ModuleNameTitle }}s(ctx context.Context) error {
+	log.Println("Seeding {{ .ModuleNameTitle }}...")
+	// Add your database insertion logic here
+	
+	log.Println("Seeding {{ .ModuleNameTitle }} completed.")
+	return nil
+}
