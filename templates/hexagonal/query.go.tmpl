@@ -1,0 +1,40 @@
+package service
+
+import (
+	"context"
+	"errors"
+)
+
+// {{ .ModuleNameTitle }}Query defines the filter parameters for reading {{ .ModuleNameTitle }} projection data.
+type {{ .ModuleNameTitle }}Query struct {
+	ID string `json:"id"`
+}
+
+// {{ .ModuleNameTitle }}QueryResult encapsulates the read-model result for {{ .ModuleNameTitle }}Query.
+type {{ .ModuleNameTitle }}QueryResult struct {
+	Data any `json:"data"`
+}
+
+// {{ .ModuleNameTitle }}QueryHandler coordinates read-optimized retrieval for {{ .ModuleNameTitle }}Query.
+type {{ .ModuleNameTitle }}QueryHandler struct {
+	// Add read-model repository or database reader here
+}
+
+// New{{ .ModuleNameTitle }}QueryHandler instantiates a new {{ .ModuleNameTitle }}QueryHandler.
+func New{{ .ModuleNameTitle }}QueryHandler() *{{ .ModuleNameTitle }}QueryHandler {
+	return &{{ .ModuleNameTitle }}QueryHandler{}
+}
+
+// Handle executes the retrieval logic for {{ .ModuleNameTitle }}Query.
+func (h *{{ .ModuleNameTitle }}QueryHandler) Handle(ctx context.Context, query {{ .ModuleNameTitle }}Query) (*{{ .ModuleNameTitle }}QueryResult, error) {
+	if query.ID == "" {
+		return nil, errors.New("query: ID parameter is required")
+	}
+
+	// Retrieve projection from read-replica or cache
+	return &{{ .ModuleNameTitle }}QueryResult{
+		Data: map[string]string{
+			"id": query.ID,
+		},
+	}, nil
+}

@@ -322,3 +322,138 @@ func (s *AetherScaffoldService) MakeSeeder(ctx context.Context, startDir, name s
 
 	return tx.Commit(ctx)
 }
+
+// MakeValueObject generates an immutable DDD Value Object struct.
+func (s *AetherScaffoldService) MakeValueObject(ctx context.Context, startDir, name string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(name, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+
+	content, err := s.engine.Render(ctx, "hexagonal/valueobject.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s_vo.go", strings.ToLower(name))
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakeAggregate generates a DDD Aggregate Root entity with event recording.
+func (s *AetherScaffoldService) MakeAggregate(ctx context.Context, startDir, name string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(name, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+
+	content, err := s.engine.Render(ctx, "hexagonal/aggregate.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s_aggregate.go", strings.ToLower(name))
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakeEvent generates a Domain Event struct and serializer.
+func (s *AetherScaffoldService) MakeEvent(ctx context.Context, startDir, name string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(name, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+
+	content, err := s.engine.Render(ctx, "hexagonal/event.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s_event.go", strings.ToLower(name))
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakeCommand generates a CQRS Command DTO and execution handler.
+func (s *AetherScaffoldService) MakeCommand(ctx context.Context, startDir, name string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(name, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+
+	content, err := s.engine.Render(ctx, "hexagonal/command.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s_command.go", strings.ToLower(name))
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Service, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakeQuery generates a CQRS Query DTO and read-model handler.
+func (s *AetherScaffoldService) MakeQuery(ctx context.Context, startDir, name string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(name, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+
+	content, err := s.engine.Render(ctx, "hexagonal/query.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s_query.go", strings.ToLower(name))
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Service, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

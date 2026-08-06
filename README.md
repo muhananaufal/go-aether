@@ -90,9 +90,9 @@ go-aether doctor
 
 ---
 
-## 🗺️ Complete CLI Command Taxonomy (v0.8.3)
+## 🗺️ Complete CLI Command Taxonomy (v0.8.4)
 
-### 🔨 Core Generators & Inspectors (`make:*`, `init`, `ls`)
+### 🔨 Core Generators & Tactical DDD (`make:*`, `init`, `ls`)
 | Command | Description | Example |
 | :--- | :--- | :--- |
 | `ls` | List active domain modules & installed plugins | `go-aether ls` |
@@ -103,6 +103,11 @@ go-aether doctor
 | `make:domain [name]` | Scaffold pure domain entity & value objects | `go-aether make:domain user` |
 | `make:port [name]` | Scaffold interface contracts (Inbound/Outbound) | `go-aether make:port invoice` |
 | `make:repository [name]` | Scaffold standalone persistence repository | `go-aether make:repository order` |
+| `make:valueobject [name]` | Generate immutable DDD Value Object | `go-aether make:valueobject email` |
+| `make:aggregate [name]` | Generate DDD Aggregate Root with event recorder | `go-aether make:aggregate order` |
+| `make:event [name]` | Generate Domain Event struct & serializer | `go-aether make:event order_paid` |
+| `make:command [name]` | Generate CQRS Command DTO & execution handler | `go-aether make:command create_order` |
+| `make:query [name]` | Generate CQRS Query DTO & read-model handler | `go-aether make:query get_order_by_id` |
 | `make:migration [name]` | Generate SQL migration pair (Goose / Golang-Migrate) | `go-aether make:migration add_users` |
 | `make:seeder [name]` | Generate database dummy data seeder | `go-aether make:seeder initial_users` |
 

@@ -1,0 +1,28 @@
+package domain
+
+import (
+	"time"
+)
+
+// {{ .ModuleNameTitle }}Event represents a business event indicating that {{ .ModuleNameTitle }} has occurred.
+type {{ .ModuleNameTitle }}Event struct {
+	EventID     string    `json:"event_id"`
+	AggregateID string    `json:"aggregate_id"`
+	OccurredAt  time.Time `json:"occurred_at"`
+	Payload     any       `json:"payload"`
+}
+
+// New{{ .ModuleNameTitle }}Event constructs a new timestamped {{ .ModuleNameTitle }}Event.
+func New{{ .ModuleNameTitle }}Event(eventID, aggregateID string, payload any) {{ .ModuleNameTitle }}Event {
+	return {{ .ModuleNameTitle }}Event{
+		EventID:     eventID,
+		AggregateID: aggregateID,
+		OccurredAt:  time.Now().UTC(),
+		Payload:     payload,
+	}
+}
+
+// EventName returns the standard dot-notated event topic name.
+func (e {{ .ModuleNameTitle }}Event) EventName() string {
+	return "{{ .ModuleNamePkg }}.event"
+}

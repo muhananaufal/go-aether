@@ -231,3 +231,138 @@ func newMakeSeederCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
 	return cmd
 }
+
+func newMakeValueObjectCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:valueobject [name]",
+		Short: "Generate an immutable DDD Value Object",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakeValueObject(cmd.Context(), cwd, name, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("💎 Generated Value Object [%s]\n", name)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
+	return cmd
+}
+
+func newMakeAggregateCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:aggregate [name]",
+		Short: "Generate a DDD Aggregate Root entity with event recording",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakeAggregate(cmd.Context(), cwd, name, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🌳 Generated Aggregate Root [%s]\n", name)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
+	return cmd
+}
+
+func newMakeEventCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:event [name]",
+		Short: "Generate a Domain Event struct and serializer",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakeEvent(cmd.Context(), cwd, name, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("📣 Generated Domain Event [%s]\n", name)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
+	return cmd
+}
+
+func newMakeCommandCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:command [name]",
+		Short: "Generate a CQRS Command DTO and execution handler",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakeCommand(cmd.Context(), cwd, name, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("⚡ Generated CQRS Command [%s]\n", name)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
+	return cmd
+}
+
+func newMakeQueryCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:query [name]",
+		Short: "Generate a CQRS Query DTO and read-model handler",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakeQuery(cmd.Context(), cwd, name, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🔍 Generated CQRS Query [%s]\n", name)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
+	return cmd
+}
