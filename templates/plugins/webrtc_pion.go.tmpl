@@ -1,0 +1,58 @@
+package webrtc
+
+import (
+	"fmt"
+
+	"github.com/pion/webrtc/v4"
+)
+
+// SessionManager manages Pion WebRTC peer connections.
+type SessionManager struct {
+	api    *webrtc.API
+	config webrtc.Configuration
+}
+
+// NewSessionManager creates an instance of WebRTC SessionManager with default STUN servers.
+func NewSessionManager() (*SessionManager, error) {
+	config := webrtc.Configuration{
+		ICEServers: []webrtc.ICEServer{
+			{
+				URLs: []string{"stun:stun.l.google.com:19302"},
+			},
+		},
+	}
+
+	settingEngine := webrtc.SettingEngine{}
+	api := webrtc.NewAPI(webrtc.WithSettingEngine(settingEngine))
+
+	return &SessionManager{
+		api:    api,
+		config: config,
+	}, nil
+}
+
+// CreatePeerConnection initialises a new WebRTC Peer Connection with data channel handler.
+func (sm *SessionManager) CreatePeerConnection(onMessage func(msg []byte)) (*webrtc.PeerConnection, error) {
+	peerConnection, err := sm.api.NewPeerConnection(sm.config)
+	if err != nil {
+		return nil, fmt.Errorf("webrtc: failed to create peer connection: %w", err)
+	}
+
+	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
+		d.OnOpen(func() {
+			fmt.Printf("WebRTC Data channel '%s'-'%d' open.\n", d.Label(), d.ID())
+		})
+
+		d.OnMessage(func(msg webrtc.DataChannelMessage) {
+			if onMessage != nil {
+				onMessage(msg.Data)
+			}
+		})
+	})
+
+	peerConnection.OnConnectionStateChange(func(s webrtc.PeerConnectionState) {
+		fmt.Printf("WebRTC Peer Connection State has changed: %s\n", s.String())
+	})
+
+	return peerConnection, nil
+}

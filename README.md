@@ -90,7 +90,7 @@ go-aether doctor
 
 ---
 
-## 🗺️ Complete CLI Command Taxonomy (v0.8.4)
+## 🗺️ Complete CLI Command Taxonomy (v0.8.5)
 
 ### 🔨 Core Generators & Tactical DDD (`make:*`, `init`, `ls`)
 | Command | Description | Example |
@@ -110,6 +110,15 @@ go-aether doctor
 | `make:query [name]` | Generate CQRS Query DTO & read-model handler | `go-aether make:query get_order_by_id` |
 | `make:migration [name]` | Generate SQL migration pair (Goose / Golang-Migrate) | `go-aether make:migration add_users` |
 | `make:seeder [name]` | Generate database dummy data seeder | `go-aether make:seeder initial_users` |
+
+### 📡 Realtime, WebSockets & Communication (`add:*`)
+| Command | Description | Example |
+| :--- | :--- | :--- |
+| `add:websocket [provider]` | WebSocket connection pool & broadcast hub (Gorilla / Nhooyr) | `go-aether add:websocket gorilla` |
+| `add:sse` | Server-Sent Events (SSE) live unidirectional streaming broker | `go-aether add:sse` |
+| `add:webrtc [provider]` | Pion WebRTC peer-to-peer data channel & signaling session | `go-aether add:webrtc pion` |
+| `add:mqtt [provider]` | Paho MQTT client for IoT telemetry pub/sub | `go-aether add:mqtt paho` |
+| `add:twilio` | Twilio SMS & WhatsApp transactional messaging client | `go-aether add:twilio` |
 
 ### 🏦 Fintech & Financial Reliability Engine (`add:*`)
 | Command | Description | Example |

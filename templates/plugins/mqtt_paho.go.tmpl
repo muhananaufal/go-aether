@@ -1,0 +1,61 @@
+package mqtt
+
+import (
+	"fmt"
+	"time"
+
+	paho "github.com/eclipse/paho.mqtt.golang"
+)
+
+// Client wraps Paho MQTT client for IoT telemetry pub/sub.
+type Client struct {
+	client paho.Client
+}
+
+// Config binds MQTT broker connection options.
+type Config struct {
+	BrokerURL string
+	ClientID  string
+	Username  string
+	Password  string
+}
+
+// NewClient connects to the specified MQTT broker.
+func NewClient(cfg Config) (*Client, error) {
+	opts := paho.NewClientOptions().
+		AddBroker(cfg.BrokerURL).
+		SetClientID(cfg.ClientID).
+		SetUsername(cfg.Username).
+		SetPassword(cfg.Password).
+		SetAutoReconnect(true).
+		SetConnectTimeout(10 * time.Second)
+
+	client := paho.NewClient(opts)
+	token := client.Connect()
+	if token.Wait() && token.Error() != nil {
+		return nil, fmt.Errorf("mqtt: failed to connect: %w", token.Error())
+	}
+
+	return &Client{client: client}, nil
+}
+
+// Publish sends a payload to a target topic with QoS level.
+func (c *Client) Publish(topic string, qos byte, retained bool, payload any) error {
+	token := c.client.Publish(topic, qos, retained, payload)
+	token.Wait()
+	return token.Error()
+}
+
+// Subscribe listens for incoming messages on a topic filter.
+func (c *Client) Subscribe(topic string, qos byte, handler func(topic string, payload []byte)) error {
+	token := c.client.Subscribe(topic, qos, func(_ paho.Client, msg paho.Message) {
+		handler(msg.Topic(), msg.Payload())
+	})
+	token.Wait()
+	return token.Error()
+}
+
+// Close gracefully disconnects the MQTT client.
+func (c *Client) Close() {
+	c.client.Disconnect(250)
+}
