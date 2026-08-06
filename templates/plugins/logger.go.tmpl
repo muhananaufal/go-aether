@@ -1,0 +1,51 @@
+package logger
+
+import (
+	"context"
+	"log/slog"
+	"os"
+)
+
+type contextKey string
+
+const (
+	correlationIDKey contextKey = "correlation_id"
+	traceIDKey       contextKey = "trace_id"
+)
+
+// ContextHandler wraps an slog.Handler to inject context correlation attributes.
+type ContextHandler struct {
+	slog.Handler
+}
+
+// Handle extracts trace and correlation identifiers from context and injects them into the record.
+func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
+	if ctx != nil {
+		if corrID, ok := ctx.Value(correlationIDKey).(string); ok && corrID != "" {
+			r.AddAttrs(slog.String("correlation_id", corrID))
+		}
+		if traceID, ok := ctx.Value(traceIDKey).(string); ok && traceID != "" {
+			r.AddAttrs(slog.String("trace_id", traceID))
+		}
+	}
+	return h.Handler.Handle(ctx, r)
+}
+
+// NewLogger instantiates a production-ready JSON structured logger.
+func NewLogger(level slog.Level) *slog.Logger {
+	baseHandler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+	})
+	ctxHandler := &ContextHandler{Handler: baseHandler}
+	return slog.New(ctxHandler)
+}
+
+// WithCorrelationID binds a correlation ID to context.
+func WithCorrelationID(ctx context.Context, correlationID string) context.Context {
+	return context.WithValue(ctx, correlationIDKey, correlationID)
+}
+
+// WithTraceID binds a distributed trace ID to context.
+func WithTraceID(ctx context.Context, traceID string) context.Context {
+	return context.WithValue(ctx, traceIDKey, traceID)
+}

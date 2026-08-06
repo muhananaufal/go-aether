@@ -59,6 +59,12 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAddSagaCommand(svc, &flags))
 	rootCmd.AddCommand(newAddWebhookCommand(svc, &flags))
 	rootCmd.AddCommand(newAddDiscoveryCommand(svc, &flags))
+	rootCmd.AddCommand(newAddAuthCommand(svc, &flags))
+	rootCmd.AddCommand(newAddStorageCommand(svc, &flags))
+	rootCmd.AddCommand(newAddCronCommand(svc, &flags))
+	rootCmd.AddCommand(newAddMailerCommand(svc, &flags))
+	rootCmd.AddCommand(newAddFirebaseCommand(svc, &flags))
+	rootCmd.AddCommand(newAddLoggerCommand(svc, &flags))
 
 	return rootCmd
 }

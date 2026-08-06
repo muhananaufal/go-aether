@@ -1,0 +1,54 @@
+package auth
+
+import (
+	"crypto/subtle"
+	"net/http"
+)
+
+// APIKeyValidator holds valid API keys for constant-time comparison.
+type APIKeyValidator struct {
+	validKeys map[string]struct{}
+	headerKey string
+}
+
+// NewAPIKeyValidator constructs a validator instance.
+func NewAPIKeyValidator(headerKey string, keys []string) *APIKeyValidator {
+	if headerKey == "" {
+		headerKey = "X-API-Key"
+	}
+	m := make(map[string]struct{}, len(keys))
+	for _, k := range keys {
+		if k != "" {
+			m[k] = struct{}{}
+		}
+	}
+	return &APIKeyValidator{
+		validKeys: m,
+		headerKey: headerKey,
+	}
+}
+
+// Validate verifies if the provided candidate key is valid in constant time.
+func (v *APIKeyValidator) Validate(candidate string) bool {
+	if candidate == "" {
+		return false
+	}
+	for k := range v.validKeys {
+		if subtle.ConstantTimeCompare([]byte(k), []byte(candidate)) == 1 {
+			return true
+		}
+	}
+	return false
+}
+
+// Middleware creates a standard HTTP middleware enforcing API key authorization.
+func (v *APIKeyValidator) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		key := r.Header.Get(v.headerKey)
+		if !v.Validate(key) {
+			http.Error(w, `{"error":"unauthorized: invalid or missing api key"}`, http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}

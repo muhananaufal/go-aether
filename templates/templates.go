@@ -6,5 +6,5 @@ import "embed"
 // It is strictly injected into the stdlib text/template engine at runtime to guarantee
 // a self-contained, single-binary distribution with zero external dependencies.
 //
-//go:embed common/* hexagonal/* distributed/* cloud/* ai/*
+//go:embed common/* hexagonal/* distributed/* cloud/* ai/* plugins/*
 var FS embed.FS

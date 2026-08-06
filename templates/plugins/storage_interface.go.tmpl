@@ -1,0 +1,22 @@
+package storage
+
+import (
+	"context"
+	"io"
+	"time"
+)
+
+// Storage defines the universal cloud and local blob storage abstraction.
+type Storage interface {
+	// Put uploads content to the designated object key.
+	Put(ctx context.Context, key string, r io.Reader, size int64, contentType string) error
+	
+	// Get retrieves a readable stream for the designated object key.
+	Get(ctx context.Context, key string) (io.ReadCloser, error)
+	
+	// Delete removes the specified object key.
+	Delete(ctx context.Context, key string) error
+	
+	// PresignGet generates a temporary pre-signed URL for direct download.
+	PresignGet(ctx context.Context, key string, expiry time.Duration) (string, error)
+}

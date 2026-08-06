@@ -1,0 +1,100 @@
+package cron
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"sync"
+	"time"
+)
+
+// JobFunc represents a scheduled task execution handler.
+type JobFunc func(ctx context.Context) error
+
+// Entry models a scheduled job definition.
+type Entry struct {
+	Name     string
+	Interval time.Duration
+	Handler  JobFunc
+}
+
+// Scheduler coordinates in-process recurring background jobs.
+type Scheduler struct {
+	mu      sync.Mutex
+	entries []Entry
+	logger  *slog.Logger
+	stopCh  chan struct{}
+	wg      sync.WaitGroup
+}
+
+// NewScheduler creates an in-process cron scheduler.
+func NewScheduler(logger *slog.Logger) *Scheduler {
+	if logger == nil {
+		logger = slog.Default()
+	}
+	return &Scheduler{
+		logger: logger,
+		stopCh: make(chan struct{}),
+	}
+}
+
+// Register adds a recurring job entry to the scheduler.
+func (s *Scheduler) Register(name string, interval time.Duration, handler JobFunc) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.entries = append(s.entries, Entry{
+		Name:     name,
+		Interval: interval,
+		Handler:  handler,
+	})
+}
+
+// Start begins execution loops for all registered jobs until context cancellation.
+func (s *Scheduler) Start(ctx context.Context) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	for _, entry := range s.entries {
+		s.wg.Add(1)
+		go s.runLoop(ctx, entry)
+	}
+}
+
+func (s *Scheduler) runLoop(ctx context.Context, entry Entry) {
+	defer s.wg.Done()
+	ticker := time.NewTicker(entry.Interval)
+	defer ticker.Stop()
+
+	s.logger.Info("Cron job registered and active", "job", entry.Name, "interval", entry.Interval.String())
+
+	for {
+		select {
+		case <-ctx.Done():
+			s.logger.Info("Stopping cron job runner", "job", entry.Name)
+			return
+		case <-s.stopCh:
+			return
+		case <-ticker.C:
+			s.executeJob(ctx, entry)
+		}
+	}
+}
+
+func (s *Scheduler) executeJob(ctx context.Context, entry Entry) {
+	defer func() {
+		if r := recover(); r != nil {
+			s.logger.Error("Cron job panicked", "job", entry.Name, "panic", fmt.Sprintf("%v", r))
+		}
+	}()
+
+	s.logger.Debug("Executing scheduled cron job", "job", entry.Name)
+	if err := entry.Handler(ctx); err != nil {
+		s.logger.Error("Cron job execution failed", "job", entry.Name, "error", err.Error())
+	}
+}
+
+// Stop initiates graceful shutdown and waits for running jobs.
+func (s *Scheduler) Stop() {
+	close(s.stopCh)
+	s.wg.Wait()
+}
