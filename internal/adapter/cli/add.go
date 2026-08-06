@@ -802,3 +802,107 @@ func newAddLockCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing lock files")
 	return cmd
 }
+
+func newAddAuthzCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:authz [casbin]",
+		Short: "Set up RBAC / ABAC authorization engine (casbin)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddAuthz(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🛡️ Injected [%s] RBAC/ABAC authorization engine\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing authz files")
+	return cmd
+}
+
+func newAddCryptoCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:crypto [aes-gcm]",
+		Short: "Set up symmetric envelope encryption helper (aes-gcm)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddCrypto(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🔑 Injected [%s] envelope encryption helper\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing crypto files")
+	return cmd
+}
+
+func newAddProfilingCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:profiling [pprof]",
+		Short: "Set up protected runtime profiling endpoints (pprof)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddProfiling(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("📈 Injected [%s] protected profiling endpoints\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing profiling files")
+	return cmd
+}
+
+func newAddFeatureFlagsCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:featureflags [flipt]",
+		Short: "Set up feature flags & canary release client (flipt)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddFeatureFlags(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🚩 Injected [%s] feature flags client\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing featureflags files")
+	return cmd
+}

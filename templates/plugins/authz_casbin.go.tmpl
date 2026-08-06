@@ -1,0 +1,78 @@
+package authz
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net/http"
+
+	"github.com/casbin/casbin/v2"
+	"github.com/casbin/casbin/v2/model"
+)
+
+var (
+	// ErrUnauthorized is returned when permission is denied.
+	ErrUnauthorized = errors.New("authz: permission denied")
+)
+
+// Enforcer wraps Casbin authorization logic.
+type Enforcer struct {
+	e *casbin.Enforcer
+}
+
+// NewRBACEnforcer initializes an in-memory or adapter-backed Casbin enforcer.
+func NewRBACEnforcer() (*Enforcer, error) {
+	// Standard RESTful RBAC model with domain support
+	modelText := `
+		[request_definition]
+		r = sub, dom, obj, act
+
+		[policy_definition]
+		p = sub, dom, obj, act
+
+		[role_definition]
+		g = _, _, _
+
+		[policy_effect]
+		e = some(where (p.eft == allow))
+
+		[matchers]
+		m = g(r.sub, p.sub, r.dom) && r.dom == p.dom && keyMatch2(r.obj, p.obj) && regexMatch(r.act, p.act)
+	`
+	m, err := model.NewModelFromString(modelText)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create casbin model: %w", err)
+	}
+
+	e, err := casbin.NewEnforcer(m)
+	if err != nil {
+		return nil, fmt.Errorf("failed to instantiate casbin enforcer: %w", err)
+	}
+
+	return &Enforcer{e: e}, nil
+}
+
+// Enforce checks if a subject has permission on resource with specified action.
+func (e *Enforcer) Enforce(sub, dom, obj, act string) (bool, error) {
+	return e.e.Enforce(sub, dom, obj, act)
+}
+
+// Middleware returns an HTTP middleware enforcing route permissions.
+func (e *Enforcer) Middleware(domainExtractor func(r *http.Request) string, subExtractor func(r *http.Request) string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			sub := subExtractor(r)
+			dom := domainExtractor(r)
+			obj := r.URL.Path
+			act := r.Method
+
+			allowed, err := e.Enforce(sub, dom, obj, act)
+			if err != nil || !allowed {
+				http.Error(w, `{"error":"Forbidden: insufficient permissions"}`, http.StatusForbidden)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}

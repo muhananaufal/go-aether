@@ -1,0 +1,55 @@
+package featureflags
+
+import (
+	"context"
+	"fmt"
+
+	flipt "go.flipt.io/flipt/rpc/flipt"
+	sdk "go.flipt.io/flipt-grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+// Client evaluates feature flags against a Flipt service instance.
+type Client struct {
+	client flipt.FliptClient
+	conn   *grpc.ClientConn
+}
+
+// NewClient initializes a gRPC connection to Flipt server.
+func NewClient(ctx context.Context, serverAddr string) (*Client, error) {
+	conn, err := grpc.DialContext(ctx, serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to connect to flipt at %s: %w", serverAddr, err)
+	}
+
+	return &Client{
+		client: flipt.NewFliptClient(conn),
+		conn:   conn,
+	}, nil
+}
+
+// Close terminates underlying gRPC connection.
+func (c *Client) Close() error {
+	if c.conn != nil {
+		return c.conn.Close()
+	}
+	return nil
+}
+
+// IsEnabled evaluates a boolean feature flag for a given entity key.
+func (c *Client) IsEnabled(ctx context.Context, namespace, flagKey, entityKey string, contextData map[string]string) (bool, error) {
+	req := &flipt.EvaluationRequest{
+		NamespaceKey: namespace,
+		FlagKey:      flagKey,
+		EntityId:     entityKey,
+		Context:      contextData,
+	}
+
+	resp, err := c.client.Evaluate(ctx, req)
+	if err != nil {
+		return false, fmt.Errorf("failed to evaluate feature flag '%s': %w", flagKey, err)
+	}
+
+	return resp.GetMatch(), nil
+}
