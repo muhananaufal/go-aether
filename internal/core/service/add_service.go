@@ -1253,3 +1253,128 @@ func (s *AetherScaffoldService) AddTwilio(ctx context.Context, startDir string, 
 
 	return tx.Commit(ctx)
 }
+
+// AddMultiLevelCache scaffolds synchronized L1 memory + L2 Redis cache.
+func (s *AetherScaffoldService) AddMultiLevelCache(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("multilevelcache", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "cache")
+
+	content, err := s.engine.Render(ctx, "plugins/multilevelcache.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "multilevel.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddBloomFilter scaffolds probabilistic cache penetration guard.
+func (s *AetherScaffoldService) AddBloomFilter(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("bloom", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "bloom")
+
+	content, err := s.engine.Render(ctx, "plugins/bloomfilter.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "bloom.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddS3 scaffolds S3 object storage client with pre-signed URL generator (MinIO / AWS).
+func (s *AetherScaffoldService) AddS3(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("s3", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "storage")
+
+	content, err := s.engine.Render(ctx, "plugins/s3_storage.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "s3.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddResilience scaffolds Circuit Breaker and Bulkhead resilience engine.
+func (s *AetherScaffoldService) AddResilience(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("resilience", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "resilience")
+
+	content, err := s.engine.Render(ctx, "plugins/resilience.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "resilience.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddSearch scaffolds full-text typo-tolerant search engine client (Meilisearch / Elasticsearch).
+func (s *AetherScaffoldService) AddSearch(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("search", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "search")
+
+	content, err := s.engine.Render(ctx, "plugins/search_meilisearch.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "search.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

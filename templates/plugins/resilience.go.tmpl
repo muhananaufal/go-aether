@@ -1,0 +1,118 @@
+package resilience
+
+import (
+	"errors"
+	"sync"
+	"time"
+)
+
+var (
+	// ErrCircuitOpen is returned when execution is rejected due to tripping error thresholds.
+	ErrCircuitOpen = errors.New("resilience: circuit breaker is open")
+	// ErrBulkheadExhausted is returned when the concurrent worker limit is reached.
+	ErrBulkheadExhausted = errors.New("resilience: bulkhead capacity saturated")
+)
+
+type State int
+
+const (
+	StateClosed State = iota
+	StateHalfOpen
+	StateOpen
+)
+
+// CircuitBreaker guards against cascading downstream microservice outages.
+type CircuitBreaker struct {
+	state          State
+	failureCount   int
+	successCount   int
+	maxFailures    int
+	timeout        time.Duration
+	lastStateChange time.Time
+	mu             sync.Mutex
+}
+
+// NewCircuitBreaker creates an adaptive circuit breaker.
+func NewCircuitBreaker(maxFailures int, timeout time.Duration) *CircuitBreaker {
+	return &CircuitBreaker{
+		state:          StateClosed,
+		maxFailures:    maxFailures,
+		timeout:        timeout,
+		lastStateChange: time.Now(),
+	}
+}
+
+// Execute runs the wrapped function protected by circuit state checks.
+func (cb *CircuitBreaker) Execute(fn func() error, fallback func() error) error {
+	cb.mu.Lock()
+
+	// Check if open state has expired
+	if cb.state == StateOpen && time.Since(cb.lastStateChange) > cb.timeout {
+		cb.state = StateHalfOpen
+		cb.lastStateChange = time.Now()
+	}
+
+	if cb.state == StateOpen {
+		cb.mu.Unlock()
+		if fallback != nil {
+			return fallback()
+		}
+		return ErrCircuitOpen
+	}
+
+	cb.mu.Unlock()
+
+	err := fn()
+
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
+
+	if err != nil {
+		cb.failureCount++
+		if cb.state == StateHalfOpen || cb.failureCount >= cb.maxFailures {
+			cb.state = StateOpen
+			cb.lastStateChange = time.Now()
+		}
+		if fallback != nil {
+			return fallback()
+		}
+		return err
+	}
+
+	// Success handling
+	if cb.state == StateHalfOpen {
+		cb.successCount++
+		if cb.successCount >= 2 {
+			cb.state = StateClosed
+			cb.failureCount = 0
+			cb.successCount = 0
+		}
+	} else {
+		cb.failureCount = 0
+	}
+
+	return nil
+}
+
+// Bulkhead limits maximum concurrent executions of a critical code block.
+type Bulkhead struct {
+	semaphore chan struct{}
+}
+
+// NewBulkhead instantiates a concurrency limiting bulkhead.
+func NewBulkhead(maxConcurrent int) *Bulkhead {
+	return &Bulkhead{
+		semaphore: make(chan struct{}, maxConcurrent),
+	}
+}
+
+// Execute runs the function only if concurrent quota is available.
+func (b *Bulkhead) Execute(fn func() error) error {
+	select {
+	case b.semaphore <- struct{}{}:
+		defer func() { <-b.semaphore }()
+		return fn()
+	default:
+		return ErrBulkheadExhausted
+	}
+}

@@ -225,4 +225,19 @@ type ScaffoldService interface {
 
 	// AddTwilio scaffolds Twilio SMS and WhatsApp omni-channel delivery client.
 	AddTwilio(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddMultiLevelCache scaffolds synchronized L1 memory + L2 Redis cache.
+	AddMultiLevelCache(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddBloomFilter scaffolds probabilistic cache penetration guard.
+	AddBloomFilter(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddS3 scaffolds S3 object storage client with pre-signed URL generator (MinIO / AWS).
+	AddS3(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddResilience scaffolds Circuit Breaker and Bulkhead resilience engine.
+	AddResilience(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddSearch scaffolds full-text typo-tolerant search engine client (Meilisearch / Elasticsearch).
+	AddSearch(ctx context.Context, startDir, provider string, dryRun, force bool) error
 }

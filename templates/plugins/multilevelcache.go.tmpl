@@ -1,0 +1,116 @@
+package cache
+
+import (
+	"context"
+	"sync"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+)
+
+// MultiLevelCache provides hierarchical L1 (In-Memory) + L2 (Redis) caching.
+type MultiLevelCache struct {
+	l1       sync.Map
+	redis    *redis.Client
+	pubsub   *redis.PubSub
+	channel  string
+	l1TTL    time.Duration
+	l2TTL    time.Duration
+}
+
+type memoryEntry struct {
+	value      any
+	expiration time.Time
+}
+
+// NewMultiLevelCache creates a synchronized 2-tier cache instance.
+func NewMultiLevelCache(rdb *redis.Client, channel string, l1TTL, l2TTL time.Duration) *MultiLevelCache {
+	c := &MultiLevelCache{
+		redis:   rdb,
+		channel: channel,
+		l1TTL:   l1TTL,
+		l2TTL:   l2TTL,
+	}
+
+	if rdb != nil && channel != "" {
+		c.pubsub = rdb.Subscribe(context.Background(), channel)
+		go c.listenInvalidations()
+	}
+
+	return c
+}
+
+func (c *MultiLevelCache) listenInvalidations() {
+	ch := c.pubsub.Channel()
+	for msg := range ch {
+		c.l1.Delete(msg.Payload)
+	}
+}
+
+// Get retrieves an item checking L1 first, then fallback to L2.
+func (c *MultiLevelCache) Get(ctx context.Context, key string) (string, bool, error) {
+	// 1. Check L1 Memory
+	if raw, ok := c.l1.Load(key); ok {
+		entry := raw.(memoryEntry)
+		if time.Now().Before(entry.expiration) {
+			return entry.value.(string), true, nil
+		}
+		c.l1.Delete(key)
+	}
+
+	// 2. Fallback to L2 Redis
+	if c.redis != nil {
+		val, err := c.redis.Get(ctx, key).Result()
+		if err == nil {
+			// Populate L1 cache
+			c.l1.Store(key, memoryEntry{
+				value:      val,
+				expiration: time.Now().Add(c.l1TTL),
+			})
+			return val, true, nil
+		}
+		if err == redis.Nil {
+			return "", false, nil
+		}
+		return "", false, err
+	}
+
+	return "", false, nil
+}
+
+// Set stores an item into both L1 and L2 and broadcasts invalidation.
+func (c *MultiLevelCache) Set(ctx context.Context, key, value string) error {
+	// Set L1
+	c.l1.Store(key, memoryEntry{
+		value:      value,
+		expiration: time.Now().Add(c.l1TTL),
+	})
+
+	// Set L2
+	if c.redis != nil {
+		if err := c.redis.Set(ctx, key, value, c.l2TTL).Err(); err != nil {
+			return err
+		}
+		if c.channel != "" {
+			c.redis.Publish(ctx, c.channel, key)
+		}
+	}
+
+	return nil
+}
+
+// Delete evicts a key from L1 and L2 across all nodes.
+func (c *MultiLevelCache) Delete(ctx context.Context, key string) error {
+	c.l1.Delete(key)
+
+	if c.redis != nil {
+		if err := c.redis.Del(ctx, key).Err(); err != nil {
+			return err
+		}
+		if c.channel != "" {
+			c.redis.Publish(ctx, c.channel, key)
+		}
+	}
+
+	return nil
+}
