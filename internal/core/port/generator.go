@@ -79,6 +79,21 @@ type ScaffoldService interface {
 	// MakeSeeder generates a database seeder file.
 	MakeSeeder(ctx context.Context, startDir, name string, dryRun, force bool) error
 
+	// MakeValueObject generates an immutable DDD Value Object struct.
+	MakeValueObject(ctx context.Context, startDir, name string, dryRun, force bool) error
+
+	// MakeAggregate generates a DDD Aggregate Root entity with event recording.
+	MakeAggregate(ctx context.Context, startDir, name string, dryRun, force bool) error
+
+	// MakeEvent generates a Domain Event struct and serializer.
+	MakeEvent(ctx context.Context, startDir, name string, dryRun, force bool) error
+
+	// MakeCommand generates a CQRS Command DTO and execution handler.
+	MakeCommand(ctx context.Context, startDir, name string, dryRun, force bool) error
+
+	// MakeQuery generates a CQRS Query DTO and read-model handler.
+	MakeQuery(ctx context.Context, startDir, name string, dryRun, force bool) error
+
 	// AddMiddleware injects middleware components into a target module's transport handler.
 	AddMiddleware(ctx context.Context, startDir, moduleName, middlewareType string, dryRun, force bool) error
 

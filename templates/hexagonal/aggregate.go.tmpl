@@ -1,0 +1,53 @@
+package domain
+
+import (
+	"errors"
+	"time"
+)
+
+var (
+	// Err{{ .ModuleNameTitle }}NotFound is returned when the {{ .ModuleNameTitle }} aggregate root cannot be located.
+	Err{{ .ModuleNameTitle }}NotFound = errors.New("domain: {{ .ModuleNamePkg }} aggregate not found")
+	// Err{{ .ModuleNameTitle }}InvariantViolated is returned when business invariants are breached.
+	Err{{ .ModuleNameTitle }}InvariantViolated = errors.New("domain: {{ .ModuleNamePkg }} business invariant violation")
+)
+
+// {{ .ModuleNameTitle }}Aggregate represents the DDD Aggregate Root managing transactional consistency for {{ .ModuleNameTitle }}.
+type {{ .ModuleNameTitle }}Aggregate struct {
+	ID        string    `json:"id"`
+	Version   int64     `json:"version"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+
+	// uncommittedEvents stores pending domain events to be published upon transaction commit.
+	uncommittedEvents []any
+}
+
+// New{{ .ModuleNameTitle }}Aggregate instantiates a new {{ .ModuleNameTitle }} Aggregate Root.
+func New{{ .ModuleNameTitle }}Aggregate(id string) (*{{ .ModuleNameTitle }}Aggregate, error) {
+	if id == "" {
+		return nil, Err{{ .ModuleNameTitle }}InvariantViolated
+	}
+
+	now := time.Now().UTC()
+	agg := &{{ .ModuleNameTitle }}Aggregate{
+		ID:        id,
+		Version:   1,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	return agg, nil
+}
+
+// RecordEvent appends an uncommitted domain event to the aggregate.
+func (a *{{ .ModuleNameTitle }}Aggregate) RecordEvent(event any) {
+	a.uncommittedEvents = append(a.uncommittedEvents, event)
+}
+
+// PullUncommittedEvents returns and clears all pending domain events.
+func (a *{{ .ModuleNameTitle }}Aggregate) PullUncommittedEvents() []any {
+	events := a.uncommittedEvents
+	a.uncommittedEvents = nil
+	return events
+}

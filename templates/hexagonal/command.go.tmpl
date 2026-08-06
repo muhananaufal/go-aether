@@ -1,0 +1,34 @@
+package service
+
+import (
+	"context"
+	"errors"
+	"fmt"
+)
+
+// {{ .ModuleNameTitle }}Command encapsulates the input parameters required to execute {{ .ModuleNameTitle }}.
+type {{ .ModuleNameTitle }}Command struct {
+	AggregateID string `json:"aggregate_id"`
+	Payload     string `json:"payload"`
+}
+
+// {{ .ModuleNameTitle }}CommandHandler coordinates the execution of {{ .ModuleNameTitle }}Command.
+type {{ .ModuleNameTitle }}CommandHandler struct {
+	// Add repository or outbound port dependencies here
+}
+
+// New{{ .ModuleNameTitle }}CommandHandler instantiates a new {{ .ModuleNameTitle }}CommandHandler.
+func New{{ .ModuleNameTitle }}CommandHandler() *{{ .ModuleNameTitle }}CommandHandler {
+	return &{{ .ModuleNameTitle }}CommandHandler{}
+}
+
+// Handle executes the business logic for {{ .ModuleNameTitle }}Command.
+func (h *{{ .ModuleNameTitle }}CommandHandler) Handle(ctx context.Context, cmd {{ .ModuleNameTitle }}Command) error {
+	if cmd.AggregateID == "" {
+		return errors.New("command: aggregate_id is required")
+	}
+
+	// Load aggregate root, apply state transition, and persist
+	fmt.Printf("⚡ Executed command: %s on aggregate: %s\n", "{{ .ModuleNameTitle }}Command", cmd.AggregateID)
+	return nil
+}

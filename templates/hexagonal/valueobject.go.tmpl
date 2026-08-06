@@ -1,0 +1,41 @@
+package domain
+
+import (
+	"errors"
+	"strings"
+)
+
+var (
+	// ErrInvalid{{ .ModuleNameTitle }} is returned when the {{ .ModuleNameTitle }} value fails validation invariants.
+	ErrInvalid{{ .ModuleNameTitle }} = errors.New("domain: invalid {{ .ModuleNamePkg }} value")
+)
+
+// {{ .ModuleNameTitle }} is an immutable DDD Value Object representing {{ .ModuleNameTitle }}.
+type {{ .ModuleNameTitle }} struct {
+	value string
+}
+
+// New{{ .ModuleNameTitle }} constructs and validates a new immutable {{ .ModuleNameTitle }} Value Object.
+func New{{ .ModuleNameTitle }}(raw string) ({{ .ModuleNameTitle }}, error) {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return {{ .ModuleNameTitle }}{}, ErrInvalid{{ .ModuleNameTitle }}
+	}
+
+	return {{ .ModuleNameTitle }}{value: trimmed}, nil
+}
+
+// Value returns the internal string value.
+func (v {{ .ModuleNameTitle }}) Value() string {
+	return v.value
+}
+
+// Equals checks structural equality between two {{ .ModuleNameTitle }} instances.
+func (v {{ .ModuleNameTitle }}) Equals(other {{ .ModuleNameTitle }}) bool {
+	return v.value == other.value
+}
+
+// String implements the fmt.Stringer interface.
+func (v {{ .ModuleNameTitle }}) String() string {
+	return v.value
+}
