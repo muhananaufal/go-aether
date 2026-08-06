@@ -251,3 +251,58 @@ func TestAetherScaffoldService_Phase14_SQLC_GRPC_MultiTenancy(t *testing.T) {
 		t.Error("expected pkg/tenant/context.go to exist")
 	}
 }
+
+func TestAetherScaffoldService_Phase15_Concurrency_ZeroTrust(t *testing.T) {
+	memFS := afero.NewMemMapFs()
+	w := writer.NewAferoWriter(memFS)
+	resolver := manifest.NewYamlResolver(w)
+
+	mockEmbed := fstest.MapFS{
+		"common/aether_yaml.tmpl":              &fstest.MapFile{Data: []byte("version: \"1\"\narchitecture:\n  paths:\n    domain: internal/core/domain\n    port: internal/core/port\n    service: internal/core/service\n    handler_http: internal/adapter/handler/http\n    repository: internal/adapter/repository\n    cmd: cmd/server\n    pkg: pkg")},
+		"plugins/pipeline.go.tmpl":             &fstest.MapFile{Data: []byte("package concurrency\n// pipeline")},
+		"plugins/singleflight.go.tmpl":         &fstest.MapFile{Data: []byte("package concurrency\n// singleflight")},
+		"plugins/metrics.go.tmpl":              &fstest.MapFile{Data: []byte("package middleware\n// metrics")},
+		"plugins/drain.go.tmpl":                &fstest.MapFile{Data: []byte("package server\n// drain")},
+		"plugins/oauth2.go.tmpl":               &fstest.MapFile{Data: []byte("package http\n// oauth2")},
+		"plugins/auditlog.go.tmpl":             &fstest.MapFile{Data: []byte("package middleware\n// auditlog")},
+		"plugins/argon2.go.tmpl":               &fstest.MapFile{Data: []byte("package security\n// argon2")},
+		"plugins/specification.go.tmpl":        &fstest.MapFile{Data: []byte("package domain\n// specification")},
+	}
+
+	engine := template.NewStdEngine(mockEmbed)
+	svc := service.NewAetherScaffoldService(engine, resolver, w)
+	ctx := context.Background()
+	projectDir := "/projects/final-app"
+	_ = w.MkdirAll(projectDir)
+
+	if err := svc.InitProject(ctx, projectDir, "final-app", "github.com/final/app", "hexagonal", "postgres", "chi", false); err != nil {
+		t.Fatalf("InitProject failed: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		action   func() error
+		expected string
+	}{
+		{"MakePipeline", func() error { return svc.MakePipeline(ctx, projectDir, "batch", false, false) }, "/projects/final-app/pkg/concurrency/batch_pipeline.go"},
+		{"MakeSpecification", func() error { return svc.MakeSpecification(ctx, projectDir, "active_user", false, false) }, "/projects/final-app/internal/core/domain/active_user_specification.go"},
+		{"AddSingleflight", func() error { return svc.AddSingleflight(ctx, projectDir, false, false) }, "/projects/final-app/pkg/concurrency/singleflight.go"},
+		{"AddMetrics", func() error { return svc.AddMetrics(ctx, projectDir, "prometheus", false, false) }, "/projects/final-app/pkg/middleware/prometheus.go"},
+		{"AddDrain", func() error { return svc.AddDrain(ctx, projectDir, false, false) }, "/projects/final-app/pkg/server/drain.go"},
+		{"AddOAuth2", func() error { return svc.AddOAuth2(ctx, projectDir, "google", false, false) }, "/projects/final-app/internal/adapter/handler/http/oauth2.go"},
+		{"AddAuditLog", func() error { return svc.AddAuditLog(ctx, projectDir, false, false) }, "/projects/final-app/pkg/middleware/auditlog.go"},
+		{"AddArgon2", func() error { return svc.AddArgon2(ctx, projectDir, false, false) }, "/projects/final-app/pkg/security/argon2.go"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.action(); err != nil {
+				t.Fatalf("%s failed: %v", tt.name, err)
+			}
+			exists, _ := w.Exists(tt.expected)
+			if !exists {
+				t.Errorf("expected %s to exist", tt.expected)
+			}
+		})
+	}
+}

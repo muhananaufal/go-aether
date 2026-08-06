@@ -1,0 +1,76 @@
+package concurrency
+
+import (
+	"context"
+	"sync"
+)
+
+// Pipeline encapsulates a bounded Fan-Out / Fan-In concurrency pattern.
+type Pipeline[I any, O any] struct {
+	MaxWorkers int
+}
+
+// NewPipeline initializes a new concurrency pipeline.
+func NewPipeline[I any, O any](maxWorkers int) *Pipeline[I, O] {
+	if maxWorkers < 1 {
+		maxWorkers = 1
+	}
+	return &Pipeline[I, O]{
+		MaxWorkers: maxWorkers,
+	}
+}
+
+// Process runs the input through the processor function using MaxWorkers goroutines.
+func (p *Pipeline[I, O]) Process(ctx context.Context, inputs []I, processor func(context.Context, I) (O, error)) ([]O, error) {
+	inputCh := make(chan I, len(inputs))
+	type result struct {
+		out O
+		err error
+	}
+	resultCh := make(chan result, len(inputs))
+
+	var wg sync.WaitGroup
+	// Spin up bounded worker pool
+	for i := 0; i < p.MaxWorkers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case in, ok := <-inputCh:
+					if !ok {
+						return // channel closed
+					}
+					out, err := processor(ctx, in)
+					resultCh <- result{out: out, err: err}
+				}
+			}
+		}()
+	}
+
+	// Feed inputs
+	go func() {
+		for _, in := range inputs {
+			inputCh <- in
+		}
+		close(inputCh)
+	}()
+
+	// Wait and close result channel safely
+	go func() {
+		wg.Wait()
+		close(resultCh)
+	}()
+
+	var outputs []O
+	for res := range resultCh {
+		if res.err != nil {
+			return nil, res.err // Fail fast on first error
+		}
+		outputs = append(outputs, res.out)
+	}
+
+	return outputs, nil
+}

@@ -1,0 +1,75 @@
+package domain
+
+// Specification encapsulates a domain rule that can be evaluated against a generic entity T.
+type Specification[T any] interface {
+	IsSatisfiedBy(candidate T) bool
+	And(other Specification[T]) Specification[T]
+	Or(other Specification[T]) Specification[T]
+	Not() Specification[T]
+}
+
+// BaseSpecification provides default implementations for logical combinators (And, Or, Not).
+type BaseSpecification[T any] struct {
+	Specification[T]
+}
+
+func (b *BaseSpecification[T]) And(other Specification[T]) Specification[T] {
+	return &AndSpecification[T]{One: b.Specification, Other: other}
+}
+
+func (b *BaseSpecification[T]) Or(other Specification[T]) Specification[T] {
+	return &OrSpecification[T]{One: b.Specification, Other: other}
+}
+
+func (b *BaseSpecification[T]) Not() Specification[T] {
+	return &NotSpecification[T]{Wrapped: b.Specification}
+}
+
+// AndSpecification combines two specifications with a logical AND.
+type AndSpecification[T any] struct {
+	BaseSpecification[T]
+	One   Specification[T]
+	Other Specification[T]
+}
+
+func (s *AndSpecification[T]) IsSatisfiedBy(candidate T) bool {
+	return s.One.IsSatisfiedBy(candidate) && s.Other.IsSatisfiedBy(candidate)
+}
+
+// OrSpecification combines two specifications with a logical OR.
+type OrSpecification[T any] struct {
+	BaseSpecification[T]
+	One   Specification[T]
+	Other Specification[T]
+}
+
+func (s *OrSpecification[T]) IsSatisfiedBy(candidate T) bool {
+	return s.One.IsSatisfiedBy(candidate) || s.Other.IsSatisfiedBy(candidate)
+}
+
+// NotSpecification negates a specification.
+type NotSpecification[T any] struct {
+	BaseSpecification[T]
+	Wrapped Specification[T]
+}
+
+func (s *NotSpecification[T]) IsSatisfiedBy(candidate T) bool {
+	return !s.Wrapped.IsSatisfiedBy(candidate)
+}
+
+// TODO: Implement your concrete domain specifications below.
+// Example:
+//
+// type ActiveUserSpec struct {
+// 	BaseSpecification[*User]
+// }
+//
+// func NewActiveUserSpec() Specification[*User] {
+// 	spec := &ActiveUserSpec{}
+// 	spec.BaseSpecification.Specification = spec // Important wiring
+// 	return spec
+// }
+//
+// func (s *ActiveUserSpec) IsSatisfiedBy(u *User) bool {
+// 	return u.IsActive && !u.IsBanned
+// }

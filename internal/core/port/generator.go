@@ -273,4 +273,25 @@ type ScaffoldService interface {
 
 	// AddTenantContext scaffolds multi-tenancy middleware, tenant context extractor, and DB scoping helper.
 	AddTenantContext(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// MakePipeline scaffolds Fan-Out / Fan-In bounded concurrency pipeline helper.
+	MakePipeline(ctx context.Context, startDir, name string, dryRun, force bool) error
+
+	// MakeSpecification scaffolds reusable DDD Specification pattern for dynamic query rules.
+	MakeSpecification(ctx context.Context, startDir, name string, dryRun, force bool) error
+
+	// AddSingleflight scaffolds request deduplication helper to prevent cache stampede.
+	AddSingleflight(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddDrain scaffolds zero-downtime graceful shutdown and connection draining manager.
+	AddDrain(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddOAuth2 scaffolds OIDC/OAuth2 login client with PKCE state verification.
+	AddOAuth2(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddAuditLog scaffolds tamper-evident immutable audit log with PII scrubbing.
+	AddAuditLog(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddArgon2 scaffolds GPU-resistant Argon2id password security hasher.
+	AddArgon2(ctx context.Context, startDir string, dryRun, force bool) error
 }

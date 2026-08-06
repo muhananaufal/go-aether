@@ -207,20 +207,25 @@ func (s *AetherScaffoldService) AddMetrics(ctx context.Context, startDir, provid
 		return fmt.Errorf("failed to locate aether.yaml: %w", err)
 	}
 
-	data, _ := domain.NewTemplateData("middleware", manifest, nil, false, false)
-	
-	tmplName := "common/metrics_prometheus.go.tmpl"
-	content, err := s.engine.Render(ctx, tmplName, data)
+	data, err := domain.NewTemplateData("metrics", manifest, nil, false, false)
 	if err != nil {
 		return err
 	}
 
 	tx := writer.NewTransactionalBuffer(s.fs)
 	projectRoot := filepath.Dir(manifestPath)
-	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "middleware", "metrics_prometheus.go")
-	
-	tx.Stage(destFile, content, force, dryRun)
-	
+	pkgDir := manifest.Architecture.Paths.Pkg
+	if pkgDir == "" {
+		pkgDir = "pkg"
+	}
+	destDir := filepath.Join(projectRoot, pkgDir, "middleware")
+
+	content, err := s.engine.Render(ctx, "plugins/metrics.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "prometheus.go"), content, force, dryRun)
+
 	return tx.Commit(ctx)
 }
 
@@ -1673,7 +1678,7 @@ func (s *AetherScaffoldService) AddGRPCGateway(ctx context.Context, startDir str
 	return tx.Commit(ctx)
 }
 
-// AddTenantContext scaffolds multi-tenancy middleware, tenant context extractor, and DB scoping helper.
+	// AddTenantContext scaffolds multi-tenancy middleware, tenant context extractor, and DB scoping helper.
 func (s *AetherScaffoldService) AddTenantContext(ctx context.Context, startDir string, dryRun, force bool) error {
 	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
 	if err != nil {
@@ -1698,6 +1703,151 @@ func (s *AetherScaffoldService) AddTenantContext(ctx context.Context, startDir s
 		return err
 	}
 	tx.Stage(filepath.Join(destDir, "context.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddSingleflight scaffolds request deduplication helper to prevent cache stampede.
+func (s *AetherScaffoldService) AddSingleflight(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("singleflight", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	pkgDir := manifest.Architecture.Paths.Pkg
+	if pkgDir == "" {
+		pkgDir = "pkg"
+	}
+	destDir := filepath.Join(projectRoot, pkgDir, "concurrency")
+
+	content, err := s.engine.Render(ctx, "plugins/singleflight.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "singleflight.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddDrain scaffolds zero-downtime graceful shutdown and connection draining manager.
+func (s *AetherScaffoldService) AddDrain(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("drain", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	pkgDir := manifest.Architecture.Paths.Pkg
+	if pkgDir == "" {
+		pkgDir = "pkg"
+	}
+	destDir := filepath.Join(projectRoot, pkgDir, "server")
+
+	content, err := s.engine.Render(ctx, "plugins/drain.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "drain.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddOAuth2 scaffolds OIDC/OAuth2 login client with PKCE state verification.
+func (s *AetherScaffoldService) AddOAuth2(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("oauth2", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	httpDir := manifest.Architecture.Paths.HandlerHTTP
+	if httpDir == "" {
+		httpDir = filepath.Join("internal", "adapter", "handler", "http")
+	}
+	destDir := filepath.Join(projectRoot, httpDir)
+
+	content, err := s.engine.Render(ctx, "plugins/oauth2.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "oauth2.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddAuditLog scaffolds tamper-evident immutable audit log with PII scrubbing.
+func (s *AetherScaffoldService) AddAuditLog(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("auditlog", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	pkgDir := manifest.Architecture.Paths.Pkg
+	if pkgDir == "" {
+		pkgDir = "pkg"
+	}
+	destDir := filepath.Join(projectRoot, pkgDir, "middleware")
+
+	content, err := s.engine.Render(ctx, "plugins/auditlog.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "auditlog.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddArgon2 scaffolds GPU-resistant Argon2id password security hasher.
+func (s *AetherScaffoldService) AddArgon2(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("argon2", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	pkgDir := manifest.Architecture.Paths.Pkg
+	if pkgDir == "" {
+		pkgDir = "pkg"
+	}
+	destDir := filepath.Join(projectRoot, pkgDir, "security")
+
+	content, err := s.engine.Render(ctx, "plugins/argon2.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "argon2.go"), content, force, dryRun)
 
 	return tx.Commit(ctx)
 }

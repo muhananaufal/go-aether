@@ -1,0 +1,29 @@
+package concurrency
+
+import (
+	"context"
+	"golang.org/x/sync/singleflight"
+)
+
+// Deduplicator manages duplicate request suppression using singleflight.
+type Deduplicator struct {
+	group singleflight.Group
+}
+
+// NewDeduplicator creates a new request deduplicator.
+func NewDeduplicator() *Deduplicator {
+	return &Deduplicator{}
+}
+
+// Do executes and returns the results of the given function, making sure that only one execution is in-flight for a given key at a time.
+func (d *Deduplicator) Do(ctx context.Context, key string, fn func(context.Context) (any, error)) (any, error, bool) {
+	val, err, shared := d.group.Do(key, func() (any, error) {
+		return fn(ctx)
+	})
+	return val, err, shared
+}
+
+// Forget tells the singleflight to forget about a key.
+func (d *Deduplicator) Forget(key string) {
+	d.group.Forget(key)
+}

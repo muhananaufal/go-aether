@@ -232,6 +232,59 @@ func newMakeSeederCommand(svc port.ScaffoldService, globals *globalFlags) *cobra
 	return cmd
 }
 
+
+func newMakePipelineCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:pipeline [name]",
+		Short: "Generate Fan-Out / Fan-In bounded concurrency pipeline helper",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakePipeline(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🌊 Generated %s pipeline in pkg/concurrency/\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing pipeline file")
+	return cmd
+}
+
+func newMakeSpecificationCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:specification [name]",
+		Short: "Generate reusable DDD Specification pattern for dynamic query rules",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakeSpecification(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("📜 Generated %s specification in internal/core/domain/\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing specification file")
+	return cmd
+}
+
 func newMakeValueObjectCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
 	var force bool
 

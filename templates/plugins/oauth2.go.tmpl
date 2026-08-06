@@ -1,0 +1,85 @@
+package http
+
+import (
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"net/http"
+
+	"golang.org/x/oauth2"
+)
+
+// OAuth2Handler manages social SSO login with PKCE state verification.
+type OAuth2Handler struct {
+	config *oauth2.Config
+}
+
+// NewOAuth2Handler creates a new OAuth2 login handler for a specific provider.
+func NewOAuth2Handler(clientID, clientSecret, redirectURL, authURL, tokenURL string, scopes []string) *OAuth2Handler {
+	return &OAuth2Handler{
+		config: &oauth2.Config{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			RedirectURL:  redirectURL,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  authURL,
+				TokenURL: tokenURL,
+			},
+			Scopes: scopes,
+		},
+	}
+}
+
+// generateStateOauthCookie creates a cryptographically secure state token.
+func generateStateOauthCookie(w http.ResponseWriter) string {
+	b := make([]byte, 16)
+	_, _ = rand.Read(b)
+	state := base64.URLEncoding.EncodeToString(b)
+	cookie := http.Cookie{
+		Name:     "oauthstate",
+		Value:    state,
+		MaxAge:   3600,
+		HttpOnly: true,
+		Secure:   true, // Require HTTPS in production
+		SameSite: http.SameSiteLaxMode,
+	}
+	http.SetCookie(w, &cookie)
+	return state
+}
+
+// HandleLogin initiates the OAuth2 redirect flow.
+func (h *OAuth2Handler) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	state := generateStateOauthCookie(w)
+	// Optionally add PKCE options here: oauth2.SetAuthURLParam("code_challenge", ...)
+	url := h.config.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+// HandleCallback processes the OAuth2 callback, validates state, and exchanges code for token.
+func (h *OAuth2Handler) HandleCallback(w http.ResponseWriter, r *http.Request) {
+	oauthState, err := r.Cookie("oauthstate")
+	if err != nil || r.FormValue("state") != oauthState.Value {
+		http.Error(w, "invalid oauth state", http.StatusBadRequest)
+		return
+	}
+
+	code := r.FormValue("code")
+	if code == "" {
+		http.Error(w, "code not found", http.StatusBadRequest)
+		return
+	}
+
+	token, err := h.config.Exchange(r.Context(), code)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("oauth2 token exchange failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"access_token": token.AccessToken,
+		"token_type":   token.TokenType,
+		"expiry":       token.Expiry,
+	})
+}

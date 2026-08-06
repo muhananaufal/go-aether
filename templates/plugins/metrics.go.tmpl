@@ -1,0 +1,68 @@
+package middleware
+
+import (
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+var (
+	httpRequestsTotal = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_total",
+			Help: "Total number of HTTP requests processed, partitioned by status code and HTTP method.",
+		},
+		[]string{"method", "path", "status"},
+	)
+
+	httpRequestDuration = promauto.NewHistogramVec(
+		prometheus.HistogramOpts{
+			Name:    "http_request_duration_seconds",
+			Help:    "Histogram of response latency (seconds) of HTTP requests.",
+			Buckets: prometheus.DefBuckets,
+		},
+		[]string{"method", "path"},
+	)
+)
+
+// statusRecorder captures the status code written by the handler.
+type statusRecorder struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (r *statusRecorder) WriteHeader(code int) {
+	r.statusCode = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+// MetricsMiddleware tracks RED (Rate, Errors, Duration) metrics for Prometheus.
+func MetricsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		start := time.Now()
+		
+		recorder := &statusRecorder{
+			ResponseWriter: w,
+			statusCode:     http.StatusOK, // Default to 200
+		}
+
+		next.ServeHTTP(recorder, req)
+
+		duration := time.Since(start).Seconds()
+		path := req.URL.Path
+		method := req.Method
+		status := strconv.Itoa(recorder.statusCode)
+
+		httpRequestsTotal.WithLabelValues(method, path, status).Inc()
+		httpRequestDuration.WithLabelValues(method, path).Observe(duration)
+	})
+}
+
+// MetricsEndpoint returns the http.Handler for the Prometheus /metrics endpoint.
+func MetricsEndpoint() http.Handler {
+	return promhttp.Handler()
+}

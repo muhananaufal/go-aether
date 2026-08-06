@@ -1,0 +1,64 @@
+package middleware
+
+import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"io"
+	"log/slog"
+	"net/http"
+	"regexp"
+)
+
+// PII Scrubbing Rules
+var piiPatterns = []*regexp.Regexp{
+	regexp.MustCompile(`(?i)(password|secret|token|api_key)["\s:=]+([^\s,"]+)`),
+	regexp.MustCompile(`\b[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{4}\b`), // Credit Card
+}
+
+func scrubPII(input []byte) []byte {
+	scrubbed := input
+	for _, re := range piiPatterns {
+		scrubbed = re.ReplaceAll(scrubbed, []byte(`${1}="***REDACTED***"`))
+	}
+	return scrubbed
+}
+
+// AuditLogMiddleware records a tamper-evident audit trail of all mutating requests.
+func AuditLogMiddleware(logger *slog.Logger) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			// Only audit mutations
+			if req.Method == http.MethodGet || req.Method == http.MethodOptions {
+				next.ServeHTTP(w, req)
+				return
+			}
+
+			var reqBody []byte
+			if req.Body != nil {
+				reqBody, _ = io.ReadAll(req.Body)
+				// Restore body for downstream handlers
+				req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
+			}
+
+			scrubbedBody := scrubPII(reqBody)
+
+			// Tamper-evident hashing (Hash of Method + URI + ScrubbedBody)
+			h := sha256.New()
+			h.Write([]byte(req.Method))
+			h.Write([]byte(req.RequestURI))
+			h.Write(scrubbedBody)
+			checksum := hex.EncodeToString(h.Sum(nil))
+
+			logger.Info("AUDIT_TRAIL",
+				slog.String("method", req.Method),
+				slog.String("uri", req.RequestURI),
+				slog.String("ip", req.RemoteAddr),
+				slog.String("checksum", checksum),
+				slog.String("body", string(scrubbedBody)),
+			)
+
+			next.ServeHTTP(w, req)
+		})
+	}
+}

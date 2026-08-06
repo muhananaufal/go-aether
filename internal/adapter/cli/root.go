@@ -104,6 +104,13 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAddGRPCStreamCommand(svc, &flags))
 	rootCmd.AddCommand(newAddGRPCGatewayCommand(svc, &flags))
 	rootCmd.AddCommand(newAddTenantContextCommand(svc, &flags))
+	rootCmd.AddCommand(newMakePipelineCommand(svc, &flags))
+	rootCmd.AddCommand(newMakeSpecificationCommand(svc, &flags))
+	rootCmd.AddCommand(newAddSingleflightCommand(svc, &flags))
+	rootCmd.AddCommand(newAddDrainCommand(svc, &flags))
+	rootCmd.AddCommand(newAddOAuth2Command(svc, &flags))
+	rootCmd.AddCommand(newAddAuditLogCommand(svc, &flags))
+	rootCmd.AddCommand(newAddArgon2Command(svc, &flags))
 
 	return rootCmd
 }

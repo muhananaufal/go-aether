@@ -297,6 +297,67 @@ func (s *AetherScaffoldService) MakeMigration(ctx context.Context, startDir, nam
 	return tx.Commit(ctx)
 }
 
+// MakePipeline scaffolds Fan-Out / Fan-In bounded concurrency pipeline helper.
+func (s *AetherScaffoldService) MakePipeline(ctx context.Context, startDir, name string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(name+"_pipeline", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	pkgDir := manifest.Architecture.Paths.Pkg
+	if pkgDir == "" {
+		pkgDir = "pkg"
+	}
+	destDir := filepath.Join(projectRoot, pkgDir, "concurrency")
+
+	content, err := s.engine.Render(ctx, "plugins/pipeline.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	// Prefix with name to allow multiple pipelines
+	fileName := fmt.Sprintf("%s_pipeline.go", strings.ToLower(name))
+	tx.Stage(filepath.Join(destDir, fileName), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakeSpecification scaffolds reusable DDD Specification pattern for dynamic query rules.
+func (s *AetherScaffoldService) MakeSpecification(ctx context.Context, startDir, name string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(name, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	domainDir := manifest.Architecture.Paths.Domain
+	if domainDir == "" {
+		domainDir = filepath.Join("internal", "core", "domain")
+	}
+	destDir := filepath.Join(projectRoot, domainDir)
+
+	content, err := s.engine.Render(ctx, "plugins/specification.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	fileName := fmt.Sprintf("%s_specification.go", strings.ToLower(name))
+	tx.Stage(filepath.Join(destDir, fileName), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
 // MakeSeeder generates a database seeder file.
 func (s *AetherScaffoldService) MakeSeeder(ctx context.Context, startDir, name string, dryRun, force bool) error {
 	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
