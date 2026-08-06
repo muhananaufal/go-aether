@@ -98,12 +98,7 @@ go-aether doctor
 
 ## 🚩 Important Command Flags
 
-While `go-aether` has many commands, most core scaffolding commands share a common set of flags. 
-
-> [!NOTE]
-> **Design Philosophy: Commands vs Flags**
-> - **Flags** (e.g., `arch:module --transports grpc`): Used during **Creation-Time**. They inject specific capabilities into a module *as it is being generated*.
-> - **Commands** (e.g., `api:transport grpc`): Used for **Global/Standalone Setup**. They scaffold global infrastructure at the project root or inject new capabilities into an *existing* codebase retrospectively (Brownfield).
+While `go-aether` has many commands, most core scaffolding commands share a common set of flags.
 
 ### Project Initialization (`init`)
 - `--module` : Go module identifier for `go.mod` (default: `github.com/example/app`).
@@ -123,9 +118,6 @@ While `go-aether` has many commands, most core scaffolding commands share a comm
 ---
 
 ## 🗺️ Complete Command Reference (v0.9.0 — 90 Commands)
-
-> [!TIP]
-> **Extensibility Note**: Arguments like `[provider]`, `[type]`, or `[algo]` are designed for forward-compatibility. In `v0.9.0`, we support industry standards out-of-the-box (e.g., `--db postgres`, `security:oauth2 google`, `o11y:tracing otel`). More specialized providers will be unlocked in v1.0.0.
 
 ### ⚙️ Core Lifecycle
 | Command | Description |
@@ -178,17 +170,17 @@ While `go-aether` has many commands, most core scaffolding commands share a comm
 | `api:openapi` | Set up Swagger / OpenAPI 3.0 documentation middleware |
 | `api:grpc` | Set up gRPC bi-directional duplex streaming handler |
 | `api:grpc-gateway` | Set up gRPC-Gateway REST/JSON reverse-proxy |
-| `api:middleware [type]` | Inject a middleware (jwt-auth, rate-limit) into a module handler |
-| `api:transport [type]` | Register a new global transport protocol in `aether.yaml` |
-| `api:validator [type]` | Set up struct validation wrapper (playground) |
-| `api:idempotency [type]` | Set up Idempotency-Key validation middleware |
+| `api:middleware [jwt\|rate-limit\|audit-log]` | Inject a middleware (jwt-auth, rate-limit, etc) into a module handler |
+| `api:transport [http\|grpc\|graphql]` | Register a new global transport protocol in `aether.yaml` |
+| `api:validator [playground]` | Set up struct validation wrapper (playground) |
+| `api:idempotency [redis]` | Set up Idempotency-Key validation middleware |
 
 ---
 
 ### ⚡ Realtime Protocols (`realtime:*`)
 | Command | Description |
 | :--- | :--- |
-| `realtime:ws [provider]` | Set up WebSocket hub and connection pool |
+| `realtime:ws [gorilla]` | Set up WebSocket hub and connection pool |
 | `realtime:sse` | Set up Server-Sent Events (SSE) streaming broker |
 | `realtime:webrtc [pion]` | Set up Pion WebRTC peer-to-peer data channel hub |
 | `realtime:mqtt [paho]` | Set up Paho MQTT client for IoT telemetry |
@@ -210,12 +202,12 @@ While `go-aether` has many commands, most core scaffolding commands share a comm
 ### 🔐 Security & Zero-Trust (`security:*`)
 | Command | Description |
 | :--- | :--- |
-| `security:auth [type]` | Set up authentication middleware (oauth2, apikey) |
+| `security:auth [oauth2\|apikey\|jwt]` | Set up authentication middleware |
 | `security:authz [casbin]` | Set up RBAC / ABAC authorization engine (Casbin) |
-| `security:oauth2 [provider]` | Set up OIDC/OAuth2 login with PKCE state verification |
+| `security:oauth2 [google\|github]` | Set up OIDC/OAuth2 login with PKCE state verification |
 | `security:argon2` | Set up GPU-resistant Argon2id password hasher |
-| `security:crypto [algo]` | Set up symmetric envelope encryption (AES-256-GCM) |
-| `security:secrets [provider]` | Set up secret manager client (Vault, AWS) |
+| `security:crypto [aes-gcm\|chacha20]` | Set up symmetric envelope encryption |
+| `security:secrets [vault\|aws-sm]` | Set up secret manager client |
 | `security:auditlog` | Set up tamper-evident immutable audit log with PII scrubbing |
 
 ---
@@ -223,7 +215,7 @@ While `go-aether` has many commands, most core scaffolding commands share a comm
 ### 💾 Caching Layer (`cache:*`)
 | Command | Description |
 | :--- | :--- |
-| `cache:redis [type]` | Set up global cache layer (Redis, Valkey) |
+| `cache:redis [redis\|valkey]` | Set up global cache layer |
 | `cache:multilevel` | Set up synchronized L1 (memory) + L2 (Redis) cache |
 | `cache:bloom` | Set up probabilistic Bloom Filter cache penetration guard |
 | `cache:dedup` | Set up Singleflight request deduplication (anti thundering herd) |
@@ -233,24 +225,24 @@ While `go-aether` has many commands, most core scaffolding commands share a comm
 ### 🏭 Infrastructure & DevOps (`infra:*`)
 | Command | Description |
 | :--- | :--- |
-| `infra:cicd [provider]` | Set up CI/CD pipelines (GitHub Actions, GitLab CI) |
-| `infra:deploy [target]` | Set up deployment manifests (K8s, Helm, Lambda) |
+| `infra:cicd [github\|gitlab]` | Set up CI/CD pipelines |
+| `infra:deploy [k8s\|helm\|lambda\|docker]` | Set up deployment manifests |
 | `infra:healthcheck` | Set up Kubernetes Liveness `/livez` and Readiness `/readyz` probes |
 | `infra:drain` | Set up zero-downtime graceful shutdown and draining manager |
 | `infra:profiling [pprof]` | Set up protected runtime profiling endpoints |
 | `infra:lint` | Set up golangci-lint configuration and git pre-commit hooks |
-| `infra:featureflags [provider]` | Set up feature flags and canary release client (Flipt) |
-| `infra:config [type]` | Set up centralized config manager (Viper, Koanf) |
-| `infra:search [provider]` | Set up full-text search engine client (Elasticsearch, Meilisearch) |
+| `infra:featureflags [flipt]` | Set up feature flags and canary release client |
+| `infra:config [viper\|koanf]` | Set up centralized config manager |
+| `infra:search [elasticsearch\|meilisearch]` | Set up full-text search engine client |
 
 ---
 
 ### 📊 Observability (`o11y:*`)
 | Command | Description |
 | :--- | :--- |
-| `o11y:tracing [exporter]` | Set up OpenTelemetry distributed tracing (Jaeger, stdout) |
-| `o11y:metrics [provider]` | Set up Prometheus RED metrics middleware and endpoint |
-| `o11y:logger [provider]` | Set up structured JSON logger with trace correlation (slog, zap) |
+| `o11y:tracing [jaeger\|stdout\|otlp]` | Set up OpenTelemetry distributed tracing |
+| `o11y:metrics [prometheus]` | Set up Prometheus RED metrics middleware and endpoint |
+| `o11y:logger [slog\|zap]` | Set up structured JSON logger with trace correlation |
 
 ---
 
@@ -269,28 +261,28 @@ While `go-aether` has many commands, most core scaffolding commands share a comm
 | :--- | :--- |
 | `notif:sms` | Set up Twilio SMS and WhatsApp omni-channel messaging |
 | `notif:push` | Set up Firebase Auth and FCM push notifications |
-| `notif:mail [provider]` | Set up transactional email client (SMTP, Resend) |
+| `notif:mail [smtp\|resend\|sendgrid]` | Set up transactional email client |
 
 ---
 
 ### ☁️ Cloud Storage (`cloud:*`)
 | Command | Description |
 | :--- | :--- |
-| `cloud:s3 [provider]` | Set up S3 object storage client with pre-signed URL generator |
-| `cloud:storage [provider]` | Set up cloud blob storage adapter (S3, GCS, local) |
+| `cloud:s3 [aws\|minio]` | Set up S3 object storage client with pre-signed URL generator |
+| `cloud:storage [s3\|gcs\|local]` | Set up cloud blob storage adapter |
 
 ---
 
 ### 🌐 Distributed Platform (`platform:*`)
 | Command | Description |
 | :--- | :--- |
-| `platform:discovery [provider]` | Set up service discovery client (Consul, etcd) |
+| `platform:discovery [consul\|etcd]` | Set up service discovery client |
 | `platform:lock [redis]` | Set up distributed Redlock mutex engine |
-| `platform:resilience [provider]` | Set up Circuit Breaker and Bulkhead resilience engine |
+| `platform:resilience [resilience4go]` | Set up Circuit Breaker and Bulkhead resilience engine |
 | `platform:cqrs [module]` | Set up CQRS Command and Query handlers for a module |
 | `platform:multitenancy [module]` | Set up Row Level Security (RLS) SQL tenant isolation |
 | `platform:tenant` | Set up tenant context middleware and isolation helper |
-| `platform:ai [provider]` | Set up LLM proxy infrastructure (OpenAI, Ollama) |
+| `platform:ai [openai\|ollama]` | Set up LLM proxy infrastructure |
 
 ---
 
