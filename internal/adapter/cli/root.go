@@ -69,6 +69,10 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAddHealthcheckCommand(svc, &flags))
 	rootCmd.AddCommand(newAddSecretsCommand(svc, &flags))
 	rootCmd.AddCommand(newAddLockCommand(svc, &flags))
+	rootCmd.AddCommand(newAddAuthzCommand(svc, &flags))
+	rootCmd.AddCommand(newAddCryptoCommand(svc, &flags))
+	rootCmd.AddCommand(newAddProfilingCommand(svc, &flags))
+	rootCmd.AddCommand(newAddFeatureFlagsCommand(svc, &flags))
 
 	return rootCmd
 }

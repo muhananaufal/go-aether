@@ -90,7 +90,7 @@ go-aether doctor
 
 ---
 
-## 🗺️ Complete CLI Command Taxonomy (v0.8.1)
+## 🗺️ Complete CLI Command Taxonomy (v0.8.2)
 
 ### 🔨 Core Generators & Inspectors (`make:*`, `init`, `ls`)
 | Command | Description | Example |
@@ -106,7 +106,7 @@ go-aether doctor
 | `make:migration [name]` | Generate SQL migration pair (Goose / Golang-Migrate) | `go-aether make:migration add_users` |
 | `make:seeder [name]` | Generate database dummy data seeder | `go-aether make:seeder initial_users` |
 
-### ⚡ Distributed Patterns, Locks & Secrets (`add:*`)
+### ⚡ Distributed Patterns, Locks, Secrets & Authz (`add:*`)
 | Command | Description | Example |
 | :--- | :--- | :--- |
 | `add:cqrs [module]` | In-module Command & Query Handlers + Bus | `go-aether add:cqrs order` |
@@ -115,15 +115,19 @@ go-aether doctor
 | `add:webhook` | HMAC-SHA256 signed webhook engine | `go-aether add:webhook` |
 | `add:lock [provider]` | Distributed mutex lock engine (Redlock) | `go-aether add:lock redis` |
 | `add:secrets [provider]` | Secrets manager client (Vault / AWS) | `go-aether add:secrets vault` |
+| `add:authz [provider]` | RBAC / ABAC authorization engine (Casbin) | `go-aether add:authz casbin` |
+| `add:crypto [algo]` | Envelope encryption helper (AES-256-GCM) | `go-aether add:crypto aes-gcm` |
+| `add:featureflags [provider]` | Feature flags client (Flipt) | `go-aether add:featureflags flipt` |
 | `add:discovery [provider]` | Service discovery client (Consul / etcd) | `go-aether add:discovery consul` |
 | `add:cache [provider]` | High-performance caching layer (Redis / Valkey) | `go-aether add:cache redis` |
 | `add:worker [provider]` | Asynchronous task queue (Asynq / River) | `go-aether add:worker asynq` |
 | `add:eventing [provider]` | Event streaming broker (Kafka / RabbitMQ) | `go-aether add:eventing kafka` |
 
-### ☁️ Cloud, Auth, Health & Observability
+### ☁️ Cloud, Auth, Health, Profiling & Observability
 | Command | Description | Example |
 | :--- | :--- | :--- |
 | `add:healthcheck` | K8s `/livez` & `/readyz` probe handlers | `go-aether add:healthcheck` |
+| `add:profiling [provider]` | Protected runtime profiling endpoints (pprof) | `go-aether add:profiling pprof` |
 | `add:auth [type]` | Authentication provider (OAuth2 / API Key) | `go-aether add:auth oauth2` |
 | `add:storage [provider]` | Cloud blob storage abstraction (S3 / GCS / Local) | `go-aether add:storage s3` |
 | `add:cron [job-name]` | In-process recurring job scheduler | `go-aether add:cron report_job` |

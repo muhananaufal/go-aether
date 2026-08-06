@@ -903,3 +903,103 @@ func (s *AetherScaffoldService) AddLock(ctx context.Context, startDir, provider 
 
 	return tx.Commit(ctx)
 }
+
+// AddAuthz scaffolds RBAC / ABAC authorization engine and middleware (Casbin).
+func (s *AetherScaffoldService) AddAuthz(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("authz", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	authzDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "authz")
+
+	content, err := s.engine.Render(ctx, "plugins/authz_casbin.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(authzDir, "casbin.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddCrypto scaffolds symmetric envelope encryption helper (AES-GCM).
+func (s *AetherScaffoldService) AddCrypto(ctx context.Context, startDir, algorithm string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("encryption", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	cryptoDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "crypto")
+
+	content, err := s.engine.Render(ctx, "plugins/crypto_aes.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(cryptoDir, "aes.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddProfiling scaffolds protected runtime pprof / Pyroscope profiling endpoints.
+func (s *AetherScaffoldService) AddProfiling(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("profiling", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	profDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "profiling")
+
+	content, err := s.engine.Render(ctx, "plugins/profiling_pprof.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(profDir, "pprof.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddFeatureFlags scaffolds feature flag & canary release client (Flipt).
+func (s *AetherScaffoldService) AddFeatureFlags(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("featureflags", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	ffDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "featureflags")
+
+	content, err := s.engine.Render(ctx, "plugins/featureflags_flipt.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(ffDir, "flipt.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

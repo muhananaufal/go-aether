@@ -168,4 +168,16 @@ type ScaffoldService interface {
 
 	// AddLock scaffolds distributed lock (Redlock / Distributed Mutex) engine.
 	AddLock(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddAuthz scaffolds RBAC / ABAC authorization engine and middleware (Casbin).
+	AddAuthz(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddCrypto scaffolds symmetric envelope encryption helper (AES-GCM).
+	AddCrypto(ctx context.Context, startDir, algorithm string, dryRun, force bool) error
+
+	// AddProfiling scaffolds protected runtime pprof / Pyroscope profiling endpoints.
+	AddProfiling(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddFeatureFlags scaffolds feature flag & canary release client (Flipt).
+	AddFeatureFlags(ctx context.Context, startDir, provider string, dryRun, force bool) error
 }
