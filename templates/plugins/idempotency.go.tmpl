@@ -1,0 +1,130 @@
+package idempotency
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+)
+
+var (
+	// ErrRequestInProgress is returned when an identical idempotency key is currently processing.
+	ErrRequestInProgress = errors.New("idempotency: request already in progress")
+)
+
+// CachedResponse captures completed HTTP execution payload.
+type CachedResponse struct {
+	StatusCode int                 `json:"status_code"`
+	Headers    map[string][]string `json:"headers"`
+	Body       []byte              `json:"body"`
+}
+
+// Manager handles distributed idempotency key validation.
+type Manager struct {
+	client *redis.Client
+	ttl    time.Duration
+}
+
+// NewManager constructs an Idempotency Manager backed by Redis.
+func NewManager(client *redis.Client, ttl time.Duration) *Manager {
+	if ttl == 0 {
+		ttl = 24 * time.Hour
+	}
+	return &Manager{
+		client: client,
+		ttl:    ttl,
+	}
+}
+
+type responseRecorder struct {
+	http.ResponseWriter
+	statusCode int
+	body       *bytes.Buffer
+}
+
+func (r *responseRecorder) WriteHeader(code int) {
+	r.statusCode = code
+	r.ResponseWriter.WriteHeader(code)
+}
+
+func (r *responseRecorder) Write(b []byte) (int, error) {
+	r.body.Write(b)
+	return r.ResponseWriter.Write(b)
+}
+
+// Middleware enforces idempotent execution based on Idempotency-Key HTTP header.
+func (m *Manager) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost && r.Method != http.MethodPatch && r.Method != http.MethodPut {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		key := r.Header.Get("Idempotency-Key")
+		if key == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		ctx := r.Context()
+		cacheKey := fmt.Sprintf("idempotency:resp:%s", key)
+		lockKey := fmt.Sprintf("idempotency:lock:%s", key)
+
+		// Check if response is already cached
+		val, err := m.client.Get(ctx, cacheKey).Bytes()
+		if err == nil && len(val) > 0 {
+			var cached CachedResponse
+			if err := json.Unmarshal(val, &cached); err == nil {
+				for hKey, hVals := range cached.Headers {
+					for _, hVal := range hVals {
+						w.Header().Add(hKey, hVal)
+					}
+				}
+				w.Header().Set("X-Cache-Lookup", "HIT-IDEMPOTENT")
+				w.WriteHeader(cached.StatusCode)
+				_, _ = w.Write(cached.Body)
+				return
+			}
+		}
+
+		// Acquire in-flight execution lock
+		acquired, err := m.client.SetNX(ctx, lockKey, "processing", 1*time.Minute).Result()
+		if err != nil || !acquired {
+			http.Error(w, `{"error":"Conflict: request is currently being processed"}`, http.StatusConflict)
+			return
+		}
+		defer func() {
+			_ = m.client.Del(ctx, lockKey)
+		}()
+
+		// Record downstream response
+		rec := &responseRecorder{
+			ResponseWriter: w,
+			statusCode:     http.StatusOK,
+			body:           &bytes.Buffer{},
+		}
+
+		next.ServeHTTP(rec, r)
+
+		// Cache successful or client-side responses (status < 500)
+		if rec.statusCode < 500 {
+			respToCache := CachedResponse{
+				StatusCode: rec.statusCode,
+				Headers:    rec.Header(),
+				Body:       rec.body.Bytes(),
+			}
+			data, err := json.Marshal(respToCache)
+			if err == nil {
+				_ = m.client.Set(ctx, cacheKey, data, m.ttl).Err()
+			}
+		}
+	})
+}

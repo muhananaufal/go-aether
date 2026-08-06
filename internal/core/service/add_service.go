@@ -1003,3 +1003,128 @@ func (s *AetherScaffoldService) AddFeatureFlags(ctx context.Context, startDir, p
 
 	return tx.Commit(ctx)
 }
+
+// AddIdempotency scaffolds Idempotency-Key validation middleware with distributed lock.
+func (s *AetherScaffoldService) AddIdempotency(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("idempotency", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "idempotency")
+
+	content, err := s.engine.Render(ctx, "plugins/idempotency.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "idempotency.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddLedger scaffolds Double-Entry Bookkeeping Ledger engine.
+func (s *AetherScaffoldService) AddLedger(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("ledger", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "ledger")
+
+	content, err := s.engine.Render(ctx, "plugins/ledger.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "ledger.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddDecimal scaffolds high-precision financial decimal money arithmetic helpers.
+func (s *AetherScaffoldService) AddDecimal(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("money", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "money")
+
+	content, err := s.engine.Render(ctx, "plugins/decimal.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "money.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddReconciliation scaffolds automated transaction settlement reconciliation matching engine.
+func (s *AetherScaffoldService) AddReconciliation(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("reconciliation", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "reconciliation")
+
+	content, err := s.engine.Render(ctx, "plugins/reconciliation.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "reconciliation.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddPricingEngine scaffolds rule-based tiered pricing and fee calculation engine.
+func (s *AetherScaffoldService) AddPricingEngine(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("pricing", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "pricing")
+
+	content, err := s.engine.Render(ctx, "plugins/pricing_engine.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "pricing.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

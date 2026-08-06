@@ -180,4 +180,19 @@ type ScaffoldService interface {
 
 	// AddFeatureFlags scaffolds feature flag & canary release client (Flipt).
 	AddFeatureFlags(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddIdempotency scaffolds Idempotency-Key validation middleware with distributed lock.
+	AddIdempotency(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddLedger scaffolds Double-Entry Bookkeeping Ledger engine.
+	AddLedger(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddDecimal scaffolds high-precision financial decimal money arithmetic helpers.
+	AddDecimal(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddReconciliation scaffolds automated transaction settlement reconciliation matching engine.
+	AddReconciliation(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddPricingEngine scaffolds rule-based tiered pricing and fee calculation engine.
+	AddPricingEngine(ctx context.Context, startDir string, dryRun, force bool) error
 }

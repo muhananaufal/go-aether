@@ -1,0 +1,114 @@
+package reconciliation
+
+import (
+	"errors"
+	"time"
+
+	"github.com/shopspring/decimal"
+)
+
+// MatchStatus represents the reconciliation comparison outcome.
+type MatchStatus string
+
+const (
+	StatusMatched         MatchStatus = "MATCHED"
+	StatusAmountMismatch  MatchStatus = "AMOUNT_MISMATCH"
+	StatusMissingInternal MatchStatus = "MISSING_INTERNAL"
+	StatusMissingExternal MatchStatus = "MISSING_EXTERNAL"
+)
+
+// TransactionRecord represents a normalized transaction record from internal or external source.
+type TransactionRecord struct {
+	ReferenceID string          `json:"reference_id"`
+	Amount      decimal.Decimal `json:"amount"`
+	Currency    string          `json:"currency"`
+	Timestamp   time.Time       `json:"timestamp"`
+}
+
+// Discrepancy details discrepancies detected during settlement audit.
+type Discrepancy struct {
+	ReferenceID    string          `json:"reference_id"`
+	Status         MatchStatus     `json:"status"`
+	InternalAmount decimal.Decimal `json:"internal_amount"`
+	ExternalAmount decimal.Decimal `json:"external_amount"`
+	Difference     decimal.Decimal `json:"difference"`
+}
+
+// ReconciliationResult contains the complete summary of a reconciliation batch.
+type ReconciliationResult struct {
+	TotalProcessed int           `json:"total_processed"`
+	MatchedCount   int           `json:"matched_count"`
+	MismatchCount  int           `json:"mismatch_count"`
+	Discrepancies  []Discrepancy `json:"discrepancies"`
+}
+
+// Engine matches internal records with external bank/gateway statements.
+type Engine struct{}
+
+// NewEngine creates an instance of the Reconciliation Engine.
+func NewEngine() *Engine {
+	return &Engine{}
+}
+
+// Reconcile executes matching between internal ledger records and external gateway reports.
+func (e *Engine) Reconcile(internal []TransactionRecord, external []TransactionRecord) (ReconciliationResult, error) {
+	if len(internal) == 0 && len(external) == 0 {
+		return ReconciliationResult{}, errors.New("reconciliation: no records to reconcile")
+	}
+
+	internalMap := make(map[string]TransactionRecord, len(internal))
+	for _, rec := range internal {
+		internalMap[rec.ReferenceID] = rec
+	}
+
+	externalMap := make(map[string]TransactionRecord, len(external))
+	for _, rec := range external {
+		externalMap[rec.ReferenceID] = rec
+	}
+
+	var result ReconciliationResult
+	processedRefs := make(map[string]bool)
+
+	// Check all internal records against external
+	for ref, inRec := range internalMap {
+		processedRefs[ref] = true
+		result.TotalProcessed++
+
+		if exRec, exists := externalMap[ref]; exists {
+			if inRec.Amount.Equal(exRec.Amount) {
+				result.MatchedCount++
+			} else {
+				result.MismatchCount++
+				result.Discrepancies = append(result.Discrepancies, Discrepancy{
+					ReferenceID:    ref,
+					Status:         StatusAmountMismatch,
+					InternalAmount: inRec.Amount,
+					ExternalAmount: exRec.Amount,
+					Difference:     inRec.Amount.Sub(exRec.Amount),
+				})
+			}
+		} else {
+			result.MismatchCount++
+			result.Discrepancies = append(result.Discrepancies, Discrepancy{
+				ReferenceID:    ref,
+				Status:         StatusMissingExternal,
+				InternalAmount: inRec.Amount,
+			})
+		}
+	}
+
+	// Check any external records missing internally
+	for ref, exRec := range externalMap {
+		if !processedRefs[ref] {
+			result.TotalProcessed++
+			result.MismatchCount++
+			result.Discrepancies = append(result.Discrepancies, Discrepancy{
+				ReferenceID:    ref,
+				Status:         StatusMissingInternal,
+				ExternalAmount: exRec.Amount,
+			})
+		}
+	}
+
+	return result, nil
+}

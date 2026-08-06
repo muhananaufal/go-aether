@@ -906,3 +906,133 @@ func newAddFeatureFlagsCommand(svc port.ScaffoldService, globals *globalFlags) *
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing featureflags files")
 	return cmd
 }
+
+func newAddIdempotencyCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:idempotency [redis|memory]",
+		Short: "Set up Idempotency-Key validation middleware",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddIdempotency(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🔁 Injected [%s] idempotency key engine\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing idempotency files")
+	return cmd
+}
+
+func newAddLedgerCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:ledger",
+		Short: "Set up Double-Entry bookkeeping ledger engine",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddLedger(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("📒 Injected Double-Entry bookkeeping ledger engine")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing ledger files")
+	return cmd
+}
+
+func newAddDecimalCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:decimal",
+		Short: "Set up high-precision financial decimal money helpers",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddDecimal(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("💰 Injected high-precision decimal money arithmetic helpers")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing money files")
+	return cmd
+}
+
+func newAddReconciliationCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:reconciliation",
+		Short: "Set up automated settlement & transaction reconciliation engine",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddReconciliation(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("⚖️ Injected automated transaction reconciliation matching engine")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing reconciliation files")
+	return cmd
+}
+
+func newAddPricingEngineCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:pricing-engine",
+		Short: "Set up rule-based tiered pricing and fee calculation engine",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddPricingEngine(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("🏷️ Injected rule-based tiered pricing engine")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing pricing files")
+	return cmd
+}
