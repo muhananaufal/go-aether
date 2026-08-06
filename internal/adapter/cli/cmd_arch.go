@@ -16,9 +16,13 @@ func newCmdArchAggregate(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	cmd := &cobra.Command{
 		Use:   "arch:aggregate [name]",
 		Short: "Generate a DDD Aggregate Root entity with event recording",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			name := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -43,9 +47,13 @@ func newCmdArchCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	cmd := &cobra.Command{
 		Use:   "arch:command [name]",
 		Short: "Generate a CQRS Command DTO and execution handler",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			name := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -70,19 +78,23 @@ func newCmdArchDI(svc port.ScaffoldService, globals *globalFlags) *cobra.Command
 	cmd := &cobra.Command{
 		Use:   "arch:di [di-type]",
 		Short: "Set up a dependency injection container (e.g. fx, wire)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddDI(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddDI(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("🧩 Injected [%s] dependency injection container\n", args[0])
+			fmt.Printf("🧩 Injected [%s] dependency injection container\n", arg0)
 			return nil
 		},
 	}
@@ -96,9 +108,13 @@ func newCmdArchDomain(svc port.ScaffoldService, globals *globalFlags) *cobra.Com
 	cmd := &cobra.Command{
 		Use:   "arch:domain [module-name]",
 		Short: "Generate only the domain layer entity for a specific module",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			moduleName := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			moduleName := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -149,9 +165,13 @@ func newCmdArchEvent(svc port.ScaffoldService, globals *globalFlags) *cobra.Comm
 	cmd := &cobra.Command{
 		Use:   "arch:event [name]",
 		Short: "Generate a Domain Event struct and serializer",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			name := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -177,9 +197,13 @@ func newCmdArchHandler(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	cmd := &cobra.Command{
 		Use:   "arch:handler [module-name]",
 		Short: "Generate only the transport handler component for a specific module",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			moduleName := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			moduleName := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -205,9 +229,13 @@ func newCmdArchMock(svc port.ScaffoldService, globals *globalFlags) *cobra.Comma
 	cmd := &cobra.Command{
 		Use:   "arch:mock [interface-name]",
 		Short: "Scaffold interface mock implementation using Mockery directives for isolated unit tests",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			interfaceName := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			interfaceName := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -289,19 +317,23 @@ func newCmdArchPipeline(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	cmd := &cobra.Command{
 		Use:   "arch:pipeline [name]",
 		Short: "Generate Fan-Out / Fan-In bounded concurrency pipeline helper",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.MakePipeline(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.MakePipeline(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("🌊 Generated %s pipeline in pkg/concurrency/\n", args[0])
+			fmt.Printf("🌊 Generated %s pipeline in pkg/concurrency/\n", arg0)
 			return nil
 		},
 	}
@@ -315,9 +347,13 @@ func newCmdArchPort(svc port.ScaffoldService, globals *globalFlags) *cobra.Comma
 	cmd := &cobra.Command{
 		Use:   "arch:port [module-name]",
 		Short: "Generate only the port interface contract for a specific module",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			moduleName := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			moduleName := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -342,9 +378,13 @@ func newCmdArchQuery(svc port.ScaffoldService, globals *globalFlags) *cobra.Comm
 	cmd := &cobra.Command{
 		Use:   "arch:query [name]",
 		Short: "Generate a CQRS Query DTO and read-model handler",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			name := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -369,9 +409,13 @@ func newCmdArchRepository(svc port.ScaffoldService, globals *globalFlags) *cobra
 	cmd := &cobra.Command{
 		Use:   "arch:repository [module-name]",
 		Short: "Generate only the infrastructure repository for a specific module",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			moduleName := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			moduleName := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -396,9 +440,13 @@ func newCmdArchService(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	cmd := &cobra.Command{
 		Use:   "arch:service [module-name]",
 		Short: "Generate only the service layer component for a specific module",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			moduleName := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			moduleName := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -423,19 +471,23 @@ func newCmdArchSpecification(svc port.ScaffoldService, globals *globalFlags) *co
 	cmd := &cobra.Command{
 		Use:   "arch:specification [name]",
 		Short: "Generate reusable DDD Specification pattern for dynamic query rules",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.MakeSpecification(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.MakeSpecification(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("📜 Generated %s specification in internal/core/domain/\n", args[0])
+			fmt.Printf("📜 Generated %s specification in internal/core/domain/\n", arg0)
 			return nil
 		},
 	}
@@ -449,9 +501,13 @@ func newCmdArchValueobject(svc port.ScaffoldService, globals *globalFlags) *cobr
 	cmd := &cobra.Command{
 		Use:   "arch:valueobject [name]",
 		Short: "Generate an immutable DDD Value Object",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			name := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err

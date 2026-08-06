@@ -28,13 +28,13 @@ func TestValidateGoIdentifier_InvalidNames(t *testing.T) {
 		name        string
 		expectedErr error
 	}{
-		{"my-order", domain.ErrInvalidIdentifier},     // hyphen not allowed in Go package names
-		{"212fast", domain.ErrInvalidIdentifier},      // cannot start with number
-		{"order space", domain.ErrInvalidIdentifier},  // spaces not allowed
-		{"context", domain.ErrStdlibCollision},        // standard library package name collision
-		{"sync", domain.ErrStdlibCollision},           // standard library package name collision
-		{"utils", domain.ErrStdlibCollision},          // forbidden anti-pattern package name
-		{"", domain.ErrInvalidIdentifier},             // empty string
+		{"my-order", domain.ErrInvalidIdentifier},    // hyphen not allowed in Go package names
+		{"212fast", domain.ErrInvalidIdentifier},     // cannot start with number
+		{"order space", domain.ErrInvalidIdentifier}, // spaces not allowed
+		{"context", domain.ErrStdlibCollision},       // standard library package name collision
+		{"sync", domain.ErrStdlibCollision},          // standard library package name collision
+		{"utils", domain.ErrStdlibCollision},         // forbidden anti-pattern package name
+		{"", domain.ErrInvalidIdentifier},            // empty string
 	}
 	for _, tc := range invalidCases {
 		t.Run(tc.name, func(t *testing.T) {

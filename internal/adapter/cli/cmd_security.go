@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/muhananaufal/go-aether/internal/adapter/cli/prompt"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -64,19 +65,23 @@ func newCmdSecurityAuth(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	cmd := &cobra.Command{
 		Use:   "security:auth [oauth2|apikey]",
 		Short: "Set up authentication handlers and middleware (oauth2, apikey)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddAuth(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddAuth(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("🔑 Injected [%s] authentication provider\n", args[0])
+			fmt.Printf("🔑 Injected [%s] authentication provider\n", arg0)
 			return nil
 		},
 	}
@@ -90,19 +95,23 @@ func newCmdSecurityAuthz(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	cmd := &cobra.Command{
 		Use:   "security:authz [casbin]",
 		Short: "Set up RBAC / ABAC authorization engine (casbin)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddAuthz(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddAuthz(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("🛡️ Injected [%s] RBAC/ABAC authorization engine\n", args[0])
+			fmt.Printf("🛡️ Injected [%s] RBAC/ABAC authorization engine\n", arg0)
 			return nil
 		},
 	}
@@ -116,19 +125,23 @@ func newCmdSecurityCrypto(svc port.ScaffoldService, globals *globalFlags) *cobra
 	cmd := &cobra.Command{
 		Use:   "security:crypto [aes-gcm]",
 		Short: "Set up symmetric envelope encryption helper (aes-gcm)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddCrypto(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddCrypto(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("🔑 Injected [%s] envelope encryption helper\n", args[0])
+			fmt.Printf("🔑 Injected [%s] envelope encryption helper\n", arg0)
 			return nil
 		},
 	}
@@ -175,19 +188,23 @@ func newCmdSecuritySecrets(svc port.ScaffoldService, globals *globalFlags) *cobr
 	cmd := &cobra.Command{
 		Use:   "security:secrets [vault|aws]",
 		Short: "Set up secret manager client (vault, aws)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddSecrets(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddSecrets(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("🔐 Injected [%s] secrets manager client\n", args[0])
+			fmt.Printf("🔐 Injected [%s] secrets manager client\n", arg0)
 			return nil
 		},
 	}

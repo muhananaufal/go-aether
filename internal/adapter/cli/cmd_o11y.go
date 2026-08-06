@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/muhananaufal/go-aether/internal/adapter/cli/prompt"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -14,19 +15,23 @@ func newCmdO11yLogger(svc port.ScaffoldService, globals *globalFlags) *cobra.Com
 	cmd := &cobra.Command{
 		Use:   "o11y:logger [provider]",
 		Short: "Set up structured JSON logger with context correlation tracking (slog, zap)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddLogger(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddLogger(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("📝 Injected [%s] structured context logger\n", args[0])
+			fmt.Printf("📝 Injected [%s] structured context logger\n", arg0)
 			return nil
 		},
 	}
@@ -40,19 +45,23 @@ func newCmdO11yMetrics(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	cmd := &cobra.Command{
 		Use:   "o11y:metrics [provider]",
 		Short: "Set up the metrics middleware and endpoint (e.g. prometheus)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddMetrics(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddMetrics(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("📊 Injected [%s] metrics middleware and endpoint\n", args[0])
+			fmt.Printf("📊 Injected [%s] metrics middleware and endpoint\n", arg0)
 			return nil
 		},
 	}
@@ -66,19 +75,23 @@ func newCmdO11yTracing(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	cmd := &cobra.Command{
 		Use:   "o11y:tracing [exporter]",
 		Short: "Set up the OpenTelemetry tracing infrastructure (e.g. jaeger, stdout)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddTracing(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddTracing(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("🔍 Injected OpenTelemetry tracing infrastructure for [%s]\n", args[0])
+			fmt.Printf("🔍 Injected OpenTelemetry tracing infrastructure for [%s]\n", arg0)
 			return nil
 		},
 	}

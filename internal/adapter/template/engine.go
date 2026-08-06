@@ -39,7 +39,7 @@ func NewStdEngine(fileSystem fs.FS) *StdEngine {
 // Render compiles and interpolates a designated template path with provided domain TemplateData.
 func (e *StdEngine) Render(ctx context.Context, templatePath string, data *domain.TemplateData) ([]byte, error) {
 	normalizedPath := path.Clean(filepathToSlash(templatePath))
-	
+
 	rawBytes, err := fs.ReadFile(e.embedFS, normalizedPath)
 	if err != nil {
 		return nil, fmt.Errorf("%w: unable to read embedded template %q: %v", domain.ErrTemplateMissing, normalizedPath, err)

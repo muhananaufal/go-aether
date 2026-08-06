@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/muhananaufal/go-aether/internal/adapter/cli/prompt"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -14,9 +15,13 @@ func newCmdDBMigration(svc port.ScaffoldService, globals *globalFlags) *cobra.Co
 	cmd := &cobra.Command{
 		Use:   "db:migration [name]",
 		Short: "Generate a SQL migration file pair (up/down)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			name := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -116,9 +121,13 @@ func newCmdDBSeeder(svc port.ScaffoldService, globals *globalFlags) *cobra.Comma
 	cmd := &cobra.Command{
 		Use:   "db:seeder [name]",
 		Short: "Generate a database seeder file",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			name := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			name := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err

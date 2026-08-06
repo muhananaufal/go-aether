@@ -27,33 +27,33 @@ var stdlibReservedWords = map[string]struct{}{
 // TemplateData represents the unified context passed into every text/template during generation.
 type TemplateData struct {
 	// Module and package branding
-	ModuleName      string  `json:"module_name"`       // e.g., "order"
-	ModuleNamePkg   string  `json:"module_name_pkg"`   // e.g., "order" (sanitized lower)
-	ModuleNameTitle string  `json:"module_name_title"` // e.g., "Order" (TitleCase)
-	PackagePath     string  `json:"package_path"`      // e.g., "github.com/company/service"
-	GoVersion       string  `json:"go_version"`        // e.g., "1.23"
-	
+	ModuleName      string `json:"module_name"`       // e.g., "order"
+	ModuleNamePkg   string `json:"module_name_pkg"`   // e.g., "order" (sanitized lower)
+	ModuleNameTitle string `json:"module_name_title"` // e.g., "Order" (TitleCase)
+	PackagePath     string `json:"package_path"`      // e.g., "github.com/company/service"
+	GoVersion       string `json:"go_version"`        // e.g., "1.23"
+
 	// Architecture context
-	ArchPattern     string  `json:"arch_pattern"`      // e.g., "hexagonal"
-	Paths           PathMap `json:"paths"`             // Resolved from AetherManifest
-	
+	ArchPattern string  `json:"arch_pattern"` // e.g., "hexagonal"
+	Paths       PathMap `json:"paths"`        // Resolved from AetherManifest
+
 	// Stack configurations
-	Router          string  `json:"router"`            // e.g., "chi"
-	DBDriver        string  `json:"db_driver"`         // e.g., "postgres"
-	CacheDriver     string  `json:"cache_driver"`      // e.g., "redis"
-	HasCache        bool    `json:"has_cache"`
-	HasWorker       bool    `json:"has_worker"`
-	Transports      []string `json:"transports"`
-	
+	Router      string   `json:"router"`       // e.g., "chi"
+	DBDriver    string   `json:"db_driver"`    // e.g., "postgres"
+	CacheDriver string   `json:"cache_driver"` // e.g., "redis"
+	HasCache    bool     `json:"has_cache"`
+	HasWorker   bool     `json:"has_worker"`
+	Transports  []string `json:"transports"`
+
 	// Security & Observability
-	AuthPattern     string  `json:"auth_pattern"`      // e.g., "jwt-rs256"
-	LoggerPattern   string  `json:"logger_pattern"`    // e.g., "slog-otel"
-	
+	AuthPattern   string `json:"auth_pattern"`   // e.g., "jwt-rs256"
+	LoggerPattern string `json:"logger_pattern"` // e.g., "slog-otel"
+
 	// Brownfield Bring-Your-Own (BYO) constructor injection
-	ExistingDBVar     string `json:"existing_db_var"`    // Non-empty triggers constructor injection instead of global connection setup
+	ExistingDBVar     string `json:"existing_db_var"` // Non-empty triggers constructor injection instead of global connection setup
 	ExistingRedisVar  string `json:"existing_redis_var"`
 	ExistingLoggerVar string `json:"existing_logger_var"`
-	
+
 	// Generation provenance metadata
 	Timestamp     string `json:"timestamp"`      // ISO8601 generation time
 	AetherVersion string `json:"aether_version"` // e.g., "0.1.0"

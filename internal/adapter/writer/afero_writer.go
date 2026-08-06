@@ -168,7 +168,7 @@ func (t *UOWWriter) Rollback() {
 	for i := len(t.written) - 1; i >= 0; i-- {
 		wf := t.written[i]
 		_ = t.baseWriter.DeleteFile(wf.path)
-		
+
 		if wf.wasOverwritten {
 			if backupData, err := t.baseWriter.ReadFile(wf.path + ".bak"); err == nil {
 				// Restore original content from .bak. Since the file was just deleted, overwrite=false is fine.

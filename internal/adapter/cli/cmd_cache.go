@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/muhananaufal/go-aether/internal/adapter/cli/prompt"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -91,9 +92,13 @@ func newCmdCacheRedis(svc port.ScaffoldService, globals *globalFlags) *cobra.Com
 	cmd := &cobra.Command{
 		Use:   "cache:redis [cache-type]",
 		Short: "Set up the global cache layer configuration and generate the cache provider infrastructure",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cacheType := args[0]
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
+			cacheType := arg0
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err

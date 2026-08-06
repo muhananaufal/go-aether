@@ -75,7 +75,7 @@ func AskSelect(title string, options []string) (string, error) {
 				Value(&result),
 		),
 	).Run()
-	
+
 	return result, err
 }
 
@@ -84,4 +84,28 @@ func PrintDryRunDiff(message string) {
 	// Simple fallback to ANSI for dry-run since we removed lipgloss from go.mod requirement to avoid bloat,
 	// but wait! lipgloss is typically installed with huh.
 	fmt.Printf("\033[36m[DRY RUN] %s\033[0m\n", message)
+}
+
+// GetArgOrPrompt retrieves an argument at the specified index. If missing, it falls back to an interactive TUI prompt.
+// If TTY is not available (e.g. CI/CD), it returns a predictable error.
+func GetArgOrPrompt(args []string, argIndex int, title, description string, required bool) (string, error) {
+	if len(args) > argIndex {
+		return args[argIndex], nil
+	}
+	if IsInteractive() {
+		return AskString(title, description, required)
+	}
+	return "", fmt.Errorf("accepts at least %d arg(s), received %d. (interactive prompt unavailable in CI)", argIndex+1, len(args))
+}
+
+// GetArgOrSelect retrieves an argument at the specified index. If missing, it falls back to an interactive TUI selection.
+// If TTY is not available, it returns a predictable error.
+func GetArgOrSelect(args []string, argIndex int, title string, options []string) (string, error) {
+	if len(args) > argIndex {
+		return args[argIndex], nil
+	}
+	if IsInteractive() {
+		return AskSelect(title, options)
+	}
+	return "", fmt.Errorf("accepts at least %d arg(s), received %d. (interactive prompt unavailable in CI)", argIndex+1, len(args))
 }

@@ -26,7 +26,18 @@ Unlike opinionated frameworks, `go-aether` is **strictly a Dev-Time Scaffolding 
 - 🩺 **Structural Health Check**: Built-in `doctor` command for AST-based diagnostics against the Single Source of Truth (`aether.yaml`).
 - 🔄 **Enterprise Patterns Built-In**: CQRS, Transactional Outbox, Distributed Saga, Unit of Work, and more — generated with a single command.
 - 🔒 **Security & Observability First**: Scaffold OpenTelemetry tracing, Prometheus metrics, Argon2id hashing, Casbin RBAC, and Zero-Trust patterns out of the box.
-- 🔍 **Brownfield Adoption**: Scan existing Go codebases and seamlessly integrate them into the Aether manifest.
+- 🛡️ **Brownfield Adoption**: Scan existing Go codebases and seamlessly integrate them into the Aether manifest.
+
+---
+
+## 🌟 What's New in v0.2.0
+
+`go-aether` v0.2.0 introduces massive DX and safety improvements for Enterprise Architects:
+
+- 🎮 **Universal TUI Fallback**: Over 40+ granular CLI commands now feature an interactive Text User Interface (TUI) fallback using `charmbracelet/huh`. Forgot an argument? Aether will elegantly prompt you for it instead of throwing a generic error, all while preserving standard flag support for CI/CD environments.
+- ⚛️ **Atomic Unit-of-Work (UOW) Disk Buffer**: File generation is now fully transactional. Aether writes all changes to a virtual buffer first. If *any* step fails (e.g. disk full, permission error), it atomically rolls back all changes and restores overwritten files via `.bak` backups, guaranteeing your filesystem is never left in a partial state.
+- 🧠 **Context Memory**: Aether intelligently remembers user context across commands, reducing repetitive keystrokes.
+- 🩺 **Doctor Health Checks**: Use `aether doctor` to perform robust structural AST diagnostics against your domain manifest.
 
 ---
 

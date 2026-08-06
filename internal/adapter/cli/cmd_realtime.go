@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/muhananaufal/go-aether/internal/adapter/cli/prompt"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -14,19 +15,23 @@ func newCmdRealtimeMQTT(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	cmd := &cobra.Command{
 		Use:   "realtime:mqtt [paho]",
 		Short: "Set up Paho MQTT client for IoT telemetry pub/sub",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddMQTT(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddMQTT(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("📶 Injected [%s] MQTT IoT pub/sub client\n", args[0])
+			fmt.Printf("📶 Injected [%s] MQTT IoT pub/sub client\n", arg0)
 			return nil
 		},
 	}
@@ -66,19 +71,23 @@ func newCmdRealtimeWS(svc port.ScaffoldService, globals *globalFlags) *cobra.Com
 	cmd := &cobra.Command{
 		Use:   "realtime:ws [gorilla|nhooyr]",
 		Short: "Set up WebSocket hub and connection pool",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddWebSocket(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddWebSocket(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("🔌 Injected [%s] WebSocket hub engine\n", args[0])
+			fmt.Printf("🔌 Injected [%s] WebSocket hub engine\n", arg0)
 			return nil
 		},
 	}
@@ -92,19 +101,23 @@ func newCmdRealtimeWebRTC(svc port.ScaffoldService, globals *globalFlags) *cobra
 	cmd := &cobra.Command{
 		Use:   "realtime:webrtc [pion]",
 		Short: "Set up Pion WebRTC peer-to-peer data channel hub",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			arg0, err := prompt.GetArgOrPrompt(args, 0, "Argument", "Please provide the required argument", true)
+			if err != nil {
+				return err
+			}
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddWebRTC(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddWebRTC(cmd.Context(), cwd, arg0, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("📹 Injected [%s] WebRTC signaling and data channel engine\n", args[0])
+			fmt.Printf("📹 Injected [%s] WebRTC signaling and data channel engine\n", arg0)
 			return nil
 		},
 	}
