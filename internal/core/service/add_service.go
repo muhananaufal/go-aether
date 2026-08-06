@@ -1378,3 +1378,193 @@ func (s *AetherScaffoldService) AddSearch(ctx context.Context, startDir, provide
 
 	return tx.Commit(ctx)
 }
+
+// TestStress scaffolds high-concurrency load testing suite (k6 / vegeta).
+func (s *AetherScaffoldService) TestStress(ctx context.Context, startDir, engine string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("stress", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, "tests", "stress")
+
+	if engine == "vegeta" {
+		content, err := s.engine.Render(ctx, "plugins/stress_vegeta.sh.tmpl", data)
+		if err != nil {
+			return err
+		}
+		tx.Stage(filepath.Join(destDir, "vegeta_attack.sh"), content, force, dryRun)
+	} else {
+		content, err := s.engine.Render(ctx, "plugins/stress_k6.js.tmpl", data)
+		if err != nil {
+			return err
+		}
+		tx.Stage(filepath.Join(destDir, "load_test.js"), content, force, dryRun)
+	}
+
+	return tx.Commit(ctx)
+}
+
+// TestChaos scaffolds chaos engineering fault injection middleware.
+func (s *AetherScaffoldService) TestChaos(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("chaos", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "middleware")
+
+	content, err := s.engine.Render(ctx, "plugins/chaos.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "chaos.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// TestFuzz scaffolds Go native continuous fuzz testing harness.
+func (s *AetherScaffoldService) TestFuzz(ctx context.Context, startDir, target string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("fuzz", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, "tests", "fuzz")
+
+	content, err := s.engine.Render(ctx, "plugins/fuzz_test.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "fuzz_test.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// TestBenchmark scaffolds micro-benchmark and memory allocation profiler.
+func (s *AetherScaffoldService) TestBenchmark(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("bench", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, "tests", "bench")
+
+	content, err := s.engine.Render(ctx, "plugins/benchmark_test.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "alloc_benchmark_test.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// TestContainer scaffolds Testcontainers integration testing harness for PostgreSQL and Redis.
+func (s *AetherScaffoldService) TestContainer(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("integration", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, "tests", "integration")
+
+	content, err := s.engine.Render(ctx, "plugins/testcontainers_test.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "postgres_redis_test.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// TestMutation scaffolds mutation testing verification harness.
+func (s *AetherScaffoldService) TestMutation(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("mutation", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, "scripts")
+
+	content, err := s.engine.Render(ctx, "plugins/mutation_test.ps1.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "mutation_test.ps1"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakeMock scaffolds interface mock implementation using Mockery directives.
+func (s *AetherScaffoldService) MakeMock(ctx context.Context, startDir, interfaceName string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	cleanName := strings.TrimSpace(interfaceName)
+	if cleanName == "" {
+		return fmt.Errorf("interface name cannot be empty")
+	}
+
+	data, err := domain.NewTemplateData(strings.ToLower(cleanName), manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+	// Preserve the original exported case for the interface struct name
+	data.ModuleNameTitle = cleanName
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, "mocks")
+
+	content, err := s.engine.Render(ctx, "plugins/mock.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, fmt.Sprintf("mock_%s.go", data.ModuleNamePkg)), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

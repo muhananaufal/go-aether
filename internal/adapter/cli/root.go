@@ -93,6 +93,13 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAddS3Command(svc, &flags))
 	rootCmd.AddCommand(newAddResilienceCommand(svc, &flags))
 	rootCmd.AddCommand(newAddSearchCommand(svc, &flags))
+	rootCmd.AddCommand(newTestStressCommand(svc, &flags))
+	rootCmd.AddCommand(newTestChaosCommand(svc, &flags))
+	rootCmd.AddCommand(newTestFuzzCommand(svc, &flags))
+	rootCmd.AddCommand(newTestBenchmarkCommand(svc, &flags))
+	rootCmd.AddCommand(newTestContainerCommand(svc, &flags))
+	rootCmd.AddCommand(newTestMutationCommand(svc, &flags))
+	rootCmd.AddCommand(newMakeMockCommand(svc, &flags))
 
 	return rootCmd
 }

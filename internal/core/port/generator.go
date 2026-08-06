@@ -240,4 +240,25 @@ type ScaffoldService interface {
 
 	// AddSearch scaffolds full-text typo-tolerant search engine client (Meilisearch / Elasticsearch).
 	AddSearch(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// TestStress scaffolds high-concurrency load testing suite (k6 / vegeta).
+	TestStress(ctx context.Context, startDir, engine string, dryRun, force bool) error
+
+	// TestChaos scaffolds chaos engineering fault injection middleware.
+	TestChaos(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// TestFuzz scaffolds Go native continuous fuzz testing harness.
+	TestFuzz(ctx context.Context, startDir, target string, dryRun, force bool) error
+
+	// TestBenchmark scaffolds micro-benchmark and memory allocation profiler.
+	TestBenchmark(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// TestContainer scaffolds Testcontainers integration testing harness for PostgreSQL and Redis.
+	TestContainer(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// TestMutation scaffolds mutation testing verification harness.
+	TestMutation(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// MakeMock scaffolds interface mock implementation using Mockery directives.
+	MakeMock(ctx context.Context, startDir, interfaceName string, dryRun, force bool) error
 }

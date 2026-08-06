@@ -1,0 +1,103 @@
+package middleware
+
+import (
+	"math/rand"
+	"net/http"
+	"os"
+	"strconv"
+	"time"
+)
+
+// ChaosConfig holds dynamic failure injection parameters.
+type ChaosConfig struct {
+	Enabled       bool          // Must be explicitly enabled in non-production environments
+	SecretToken   string        // X-Chaos-Secret header requirement
+	LatencyMin    time.Duration // Minimum artificial latency delay
+	LatencyMax    time.Duration // Maximum artificial latency delay
+	LatencyRate   float64       // Probability (0.0 - 1.0) of injecting latency
+	ErrorRate     float64       // Probability (0.0 - 1.0) of injecting 500/503 errors
+	ErrorStatus   int           // HTTP status code to return on error injection (e.g. 500, 503)
+	AbortRate     float64       // Probability (0.0 - 1.0) of abruptly closing connection
+}
+
+// DefaultChaosConfig loads chaos settings from environment variables.
+func DefaultChaosConfig() ChaosConfig {
+	enabled := os.Getenv("CHAOS_ENABLED") == "true"
+	token := os.Getenv("CHAOS_SECRET_TOKEN")
+	if token == "" {
+		token = "aether-chaos-sim"
+	}
+
+	errRate, _ := strconv.ParseFloat(os.Getenv("CHAOS_ERROR_RATE"), 64)
+	latRate, _ := strconv.ParseFloat(os.Getenv("CHAOS_LATENCY_RATE"), 64)
+
+	return ChaosConfig{
+		Enabled:     enabled,
+		SecretToken: token,
+		LatencyMin:  100 * time.Millisecond,
+		LatencyMax:  1500 * time.Millisecond,
+		LatencyRate: latRate,
+		ErrorRate:   errRate,
+		ErrorStatus: http.StatusServiceUnavailable,
+		AbortRate:   0.0,
+	}
+}
+
+// ChaosMiddleware injects controlled failures to test downstream resiliency and circuit breakers.
+func ChaosMiddleware(cfg ChaosConfig) func(http.Handler) http.Handler {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			// Fast path if chaos is globally disabled
+			if !cfg.Enabled {
+				next.ServeHTTP(w, req)
+				return
+			}
+
+			// Security guard: verify secret header if token is set
+			if cfg.SecretToken != "" && req.Header.Get("X-Chaos-Secret") != cfg.SecretToken {
+				next.ServeHTTP(w, req)
+				return
+			}
+
+			// 1. Connection Abort Injection
+			if cfg.AbortRate > 0 && r.Float64() < cfg.AbortRate {
+				if hijacker, ok := w.(http.Hijacker); ok {
+					conn, _, err := hijacker.Hijack()
+					if err == nil {
+						_ = conn.Close()
+						return
+					}
+				}
+			}
+
+			// 2. Latency Injection
+			if cfg.LatencyRate > 0 && r.Float64() < cfg.LatencyRate {
+				delta := cfg.LatencyMax - cfg.LatencyMin
+				var delay time.Duration
+				if delta > 0 {
+					delay = cfg.LatencyMin + time.Duration(r.Int63n(int64(delta)))
+				} else {
+					delay = cfg.LatencyMin
+				}
+				time.Sleep(delay)
+			}
+
+			// 3. Error Rate Injection
+			if cfg.ErrorRate > 0 && r.Float64() < cfg.ErrorRate {
+				status := cfg.ErrorStatus
+				if status == 0 {
+					status = http.StatusInternalServerError
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.Header().Set("X-Chaos-Injected", "true")
+				w.WriteHeader(status)
+				_, _ = w.Write([]byte(`{"error":"chaos_injected_failure","message":"simulated failure by go-aether chaos middleware"}`))
+				return
+			}
+
+			next.ServeHTTP(w, req)
+		})
+	}
+}

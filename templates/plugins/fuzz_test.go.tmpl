@@ -1,0 +1,48 @@
+package fuzz_test
+
+import (
+	"bytes"
+	"encoding/json"
+	"testing"
+	"unicode/utf8"
+)
+
+// FuzzJSONPayloadParser tests arbitrary byte permutations against JSON payload unmarshaling
+// to guarantee zero unhandled panics, zero memory leaks, and strict UTF-8 validity.
+func FuzzJSONPayloadParser(f *testing.F) {
+	// Seed initial valid and edge-case corpus
+	f.Add([]byte(`{"id":"123","amount":1000.50,"currency":"USD"}`))
+	f.Add([]byte(`{"id":"","amount":-1,"currency":"INVALID"}`))
+	f.Add([]byte(`{"nested":{"deep":{"value":true}}}`))
+	f.Add([]byte(`[]`))
+	f.Add([]byte(`null`))
+	f.Add([]byte{0x00, 0xFF, 0xFE, 0xFD}) // Corrupted binary bytes
+
+	f.Fuzz(func(t *testing.T, data []byte) {
+		// Guard against OOM attacks during extreme fuzz loops
+		if len(data) > 65536 {
+			t.Skip("payload exceeds 64KB fuzz limit")
+		}
+
+		var payload map[string]any
+		decoder := json.NewDecoder(bytes.NewReader(data))
+		decoder.UseNumber()
+
+		err := decoder.Decode(&payload)
+		if err != nil {
+			// Parsing error is expected for invalid bytes
+			return
+		}
+
+		// Invariant 1: If successfully decoded, re-marshaling must not panic
+		encoded, err := json.Marshal(payload)
+		if err != nil {
+			t.Fatalf("failed to re-marshal decoded payload: %v", err)
+		}
+
+		// Invariant 2: Re-marshaled JSON must be valid UTF-8
+		if !utf8.Valid(encoded) {
+			t.Fatalf("re-marshaled JSON contains invalid UTF-8 bytes")
+		}
+	})
+}

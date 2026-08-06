@@ -1,0 +1,97 @@
+package integration_test
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"testing"
+	"time"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	"github.com/testcontainers/testcontainers-go/modules/redis"
+	"github.com/testcontainers/testcontainers-go/wait"
+)
+
+// TestPostgresRedisIntegration demonstrates end-to-end multi-container integration testing
+// using ephemeral Docker containers managed by Testcontainers.
+func TestPostgresRedisIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	// 1. Pre-flight check: skip if Docker daemon is not reachable
+	provider, err := testcontainers.ProviderDocker.GetProvider()
+	if err != nil || provider.Health(ctx) != nil {
+		t.Skip("Docker daemon is not running. Skipping live Testcontainers integration test.")
+		return
+	}
+
+	// 2. Spin up ephemeral PostgreSQL 16 container
+	pgContainer, err := postgres.RunContainer(ctx,
+		testcontainers.WithImage("postgres:16-alpine"),
+		postgres.WithDatabase("aether_test"),
+		postgres.WithUsername("postgres"),
+		postgres.WithPassword("secret"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(30*time.Second),
+		),
+	)
+	if err != nil {
+		t.Fatalf("failed to start postgres container: %v", err)
+	}
+	defer func() {
+		if err := pgContainer.Terminate(context.Background()); err != nil {
+			t.Logf("failed to terminate postgres container: %v", err)
+		}
+	}()
+
+	connStr, err := pgContainer.ConnectionString(ctx, "sslmode=disable")
+	if err != nil {
+		t.Fatalf("failed to get postgres connection string: %v", err)
+	}
+
+	// Verify live database connectivity
+	db, err := sql.Open("pgx", connStr)
+	if err != nil {
+		t.Fatalf("failed to open database connection: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.PingContext(ctx); err != nil {
+		t.Fatalf("failed to ping live postgres container: %v", err)
+	}
+
+	// 3. Spin up ephemeral Redis 7 container
+	redisContainer, err := redis.RunContainer(ctx,
+		testcontainers.WithImage("redis:7-alpine"),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("Ready to accept connections").
+				WithStartupTimeout(20*time.Second),
+		),
+	)
+	if err != nil {
+		t.Fatalf("failed to start redis container: %v", err)
+	}
+	defer func() {
+		if err := redisContainer.Terminate(context.Background()); err != nil {
+			t.Logf("failed to terminate redis container: %v", err)
+		}
+	}()
+
+	redisURI, err := redisContainer.ConnectionString(ctx)
+	if err != nil {
+		t.Fatalf("failed to get redis URI: %v", err)
+	}
+
+	t.Logf("✅ Live integration harness ready: Postgres=%s | Redis=%s", connStr, redisURI)
+
+	// Execute transactional test query on real container
+	var result int
+	err = db.QueryRowContext(ctx, "SELECT 1 + 1").Scan(&result)
+	if err != nil || result != 2 {
+		t.Fatalf("expected calculation result 2, got %d, err: %v", result, err)
+	}
+}

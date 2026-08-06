@@ -77,3 +77,102 @@ func TestAetherScaffoldService_E2E_InitAndMakeModule(t *testing.T) {
 		t.Errorf("expected doctor check success message, got:\n%s", output)
 	}
 }
+
+func TestAetherScaffoldService_Phase13_TestingAndQASuite(t *testing.T) {
+	memFS := afero.NewMemMapFs()
+	w := writer.NewAferoWriter(memFS)
+	resolver := manifest.NewYamlResolver(w)
+
+	mockEmbed := fstest.MapFS{
+		"common/aether_yaml.tmpl":               &fstest.MapFile{Data: []byte("version: \"1\"")},
+		"plugins/stress_k6.js.tmpl":             &fstest.MapFile{Data: []byte("// k6 stress test for {{ .ModuleName }}")},
+		"plugins/stress_vegeta.sh.tmpl":         &fstest.MapFile{Data: []byte("# vegeta stress test for {{ .ModuleNameTitle }}")},
+		"plugins/chaos.go.tmpl":                 &fstest.MapFile{Data: []byte("package middleware\n// chaos middleware")},
+		"plugins/fuzz_test.go.tmpl":             &fstest.MapFile{Data: []byte("package fuzz_test\n// fuzz test")},
+		"plugins/benchmark_test.go.tmpl":        &fstest.MapFile{Data: []byte("package bench_test\n// benchmark test")},
+		"plugins/testcontainers_test.go.tmpl":   &fstest.MapFile{Data: []byte("package integration_test\n// testcontainers")},
+		"plugins/mutation_test.ps1.tmpl":        &fstest.MapFile{Data: []byte("# mutation test script")},
+		"plugins/mock.go.tmpl":                  &fstest.MapFile{Data: []byte("package mocks\n// mock for {{ .ModuleNameTitle }}")},
+	}
+
+	engine := template.NewStdEngine(mockEmbed)
+	svc := service.NewAetherScaffoldService(engine, resolver, w)
+	ctx := context.Background()
+	projectDir := "/projects/qa-app"
+	_ = w.MkdirAll(projectDir)
+
+	if err := svc.InitProject(ctx, projectDir, "qa-app", "github.com/qa/app", "hexagonal", "postgres", "chi", false); err != nil {
+		t.Fatalf("InitProject failed: %v", err)
+	}
+
+	// 1. TestStress k6 & vegeta
+	if err := svc.TestStress(ctx, projectDir, "k6", false, false); err != nil {
+		t.Fatalf("TestStress k6 failed: %v", err)
+	}
+	exists, _ := w.Exists("/projects/qa-app/tests/stress/load_test.js")
+	if !exists {
+		t.Error("expected load_test.js to exist")
+	}
+
+	if err := svc.TestStress(ctx, projectDir, "vegeta", false, false); err != nil {
+		t.Fatalf("TestStress vegeta failed: %v", err)
+	}
+	exists, _ = w.Exists("/projects/qa-app/tests/stress/vegeta_attack.sh")
+	if !exists {
+		t.Error("expected vegeta_attack.sh to exist")
+	}
+
+	// 2. TestChaos
+	if err := svc.TestChaos(ctx, projectDir, false, false); err != nil {
+		t.Fatalf("TestChaos failed: %v", err)
+	}
+	exists, _ = w.Exists("/projects/qa-app/pkg/middleware/chaos.go")
+	if !exists {
+		t.Error("expected pkg/middleware/chaos.go to exist")
+	}
+
+	// 3. TestFuzz
+	if err := svc.TestFuzz(ctx, projectDir, "json", false, false); err != nil {
+		t.Fatalf("TestFuzz failed: %v", err)
+	}
+	exists, _ = w.Exists("/projects/qa-app/tests/fuzz/fuzz_test.go")
+	if !exists {
+		t.Error("expected tests/fuzz/fuzz_test.go to exist")
+	}
+
+	// 4. TestBenchmark
+	if err := svc.TestBenchmark(ctx, projectDir, false, false); err != nil {
+		t.Fatalf("TestBenchmark failed: %v", err)
+	}
+	exists, _ = w.Exists("/projects/qa-app/tests/bench/alloc_benchmark_test.go")
+	if !exists {
+		t.Error("expected tests/bench/alloc_benchmark_test.go to exist")
+	}
+
+	// 5. TestContainer
+	if err := svc.TestContainer(ctx, projectDir, "postgres-redis", false, false); err != nil {
+		t.Fatalf("TestContainer failed: %v", err)
+	}
+	exists, _ = w.Exists("/projects/qa-app/tests/integration/postgres_redis_test.go")
+	if !exists {
+		t.Error("expected tests/integration/postgres_redis_test.go to exist")
+	}
+
+	// 6. TestMutation
+	if err := svc.TestMutation(ctx, projectDir, false, false); err != nil {
+		t.Fatalf("TestMutation failed: %v", err)
+	}
+	exists, _ = w.Exists("/projects/qa-app/scripts/mutation_test.ps1")
+	if !exists {
+		t.Error("expected scripts/mutation_test.ps1 to exist")
+	}
+
+	// 7. MakeMock
+	if err := svc.MakeMock(ctx, projectDir, "PaymentGateway", false, false); err != nil {
+		t.Fatalf("MakeMock failed: %v", err)
+	}
+	exists, _ = w.Exists("/projects/qa-app/mocks/mock_paymentgateway.go")
+	if !exists {
+		t.Error("expected mocks/mock_paymentgateway.go to exist")
+	}
+}

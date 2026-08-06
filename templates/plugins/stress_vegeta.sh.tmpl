@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# High-Throughput Vegeta Load Testing Script for {{ .ModuleNameTitle }}
+# SLA Target: 10,000 RPS with P99 < 50ms
+
+TARGET_URL="${TARGET_URL:-http://localhost:8080/healthz}"
+RATE="${RATE:-5000/1s}"
+DURATION="${DURATION:-60s}"
+OUTPUT_DIR="tests/stress/results"
+
+mkdir -p "${OUTPUT_DIR}"
+
+echo "=========================================================="
+echo "🚀 Starting Vegeta Load Attack on ${TARGET_URL}"
+echo "📊 Rate: ${RATE} | Duration: ${DURATION}"
+echo "=========================================================="
+
+echo "GET ${TARGET_URL}" | vegeta attack -rate="${RATE}" -duration="${DURATION}" -timeout=5s | tee "${OUTPUT_DIR}/results.bin" | vegeta report
+
+echo "📈 Generating Latency Distribution Plot..."
+vegeta plot "${OUTPUT_DIR}/results.bin" > "${OUTPUT_DIR}/plot.html"
+vegeta report -type=json "${OUTPUT_DIR}/results.bin" > "${OUTPUT_DIR}/summary.json"
+
+echo "✅ Stress test completed. Reports generated at ${OUTPUT_DIR}/plot.html"
