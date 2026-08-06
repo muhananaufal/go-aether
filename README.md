@@ -98,7 +98,12 @@ go-aether doctor
 
 ## 🚩 Important Command Flags
 
-While `go-aether` has many commands, most core scaffolding commands share a common set of flags.
+While `go-aether` has many commands, most core scaffolding commands share a common set of flags. 
+
+> [!NOTE]
+> **Design Philosophy: Commands vs Flags**
+> - **Flags** (e.g., `arch:module --transports grpc`): Used during **Creation-Time**. They inject specific capabilities into a module *as it is being generated*.
+> - **Commands** (e.g., `api:transport grpc`): Used for **Global/Standalone Setup**. They scaffold global infrastructure at the project root or inject new capabilities into an *existing* codebase retrospectively (Brownfield).
 
 ### Project Initialization (`init`)
 - `--module` : Go module identifier for `go.mod` (default: `github.com/example/app`).
@@ -118,6 +123,9 @@ While `go-aether` has many commands, most core scaffolding commands share a comm
 ---
 
 ## 🗺️ Complete Command Reference (v0.9.0 — 90 Commands)
+
+> [!TIP]
+> **Extensibility Note**: Arguments like `[provider]`, `[type]`, or `[algo]` are designed for forward-compatibility. In `v0.9.0`, we support industry standards out-of-the-box (e.g., `--db postgres`, `security:oauth2 google`, `o11y:tracing otel`). More specialized providers will be unlocked in v1.0.0.
 
 ### ⚙️ Core Lifecycle
 | Command | Description |
