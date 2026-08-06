@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -11,7 +13,7 @@ type globalFlags struct {
 }
 
 // NewRootCommand constructs the parent cobra command and attaches all available subcommands.
-func NewRootCommand(svc port.ScaffoldService) *cobra.Command {
+func NewRootCommand(svc port.ScaffoldService, version, commit, date string) *cobra.Command {
 	var flags globalFlags
 
 	rootCmd := &cobra.Command{
@@ -19,9 +21,12 @@ func NewRootCommand(svc port.ScaffoldService) *cobra.Command {
 		Short: "Opinionated Architecture Scaffold CLI Engine for Go Backend Engineers",
 		Long: `go-aether is a lightning-fast dev-time CLI scaffolding engine built to standardize
 Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and eliminate legacy boilerplate.`,
+		Version:       fmt.Sprintf("%s\ncommit: %s\nbuilt at: %s", version, commit, date),
 		SilenceUsage:  true,
 		SilenceErrors: false,
 	}
+
+	rootCmd.SetVersionTemplate("go-aether version {{.Version}}\n")
 
 	rootCmd.PersistentFlags().BoolVarP(&flags.Verbose, "verbose", "v", false, "enable verbose structured logging output")
 	rootCmd.PersistentFlags().BoolVar(&flags.DryRun, "dry-run", false, "simulate execution without mutating physical filesystem")

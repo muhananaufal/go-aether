@@ -13,6 +13,13 @@ import (
 	"github.com/spf13/afero"
 )
 
+// Injected by Goreleaser via ldflags
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 func main() {
 	// Initialize core ports & adapters ("Dogfooding Hexagonal Architecture")
 	osFS := afero.NewOsFs()
@@ -24,7 +31,7 @@ func main() {
 	scaffoldService := service.NewAetherScaffoldService(engine, resolver, fileWriter)
 
 	// Bind CLI root entrypoint and execute
-	rootCommand := cli.NewRootCommand(scaffoldService)
+	rootCommand := cli.NewRootCommand(scaffoldService, version, commit, date)
 	if err := rootCommand.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error executing go-aether: %v\n", err)
 		os.Exit(1)
