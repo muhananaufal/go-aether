@@ -57,4 +57,19 @@ type ScaffoldService interface {
 
 	// RunDoctor audits project architecture health and checks consistency against aether.yaml.
 	RunDoctor(ctx context.Context, startDir string, fix bool, out io.Writer) error
+
+	// MakeService generates only the service layer component for a specific module.
+	MakeService(ctx context.Context, startDir, moduleName string, dryRun, force bool) error
+
+	// MakeHandler generates only the transport handler component for a specific module.
+	MakeHandler(ctx context.Context, startDir, moduleName, transport string, dryRun, force bool) error
+
+	// AddMiddleware injects middleware components into a target module's transport handler.
+	AddMiddleware(ctx context.Context, startDir, moduleName, middlewareType string, dryRun, force bool) error
+
+	// AddCache sets up the global cache layer configuration and generates the cache provider infrastructure.
+	AddCache(ctx context.Context, startDir, cacheType string, dryRun, force bool) error
+
+	// AddTransport registers a new global transport protocol.
+	AddTransport(ctx context.Context, startDir, transport string, dryRun, force bool) error
 }

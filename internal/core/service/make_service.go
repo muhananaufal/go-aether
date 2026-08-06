@@ -102,3 +102,73 @@ func (s *AetherScaffoldService) MakeModule(ctx context.Context, startDir, module
 
 	return nil
 }
+
+// MakeService generates only the service layer component for a specific module.
+func (s *AetherScaffoldService) MakeService(ctx context.Context, startDir, moduleName string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(moduleName, manifest, []string{"http"}, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	archPrefix := manifest.Architecture.Pattern
+
+	tmplName := fmt.Sprintf("%s/service.go.tmpl", archPrefix)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s_service.go", strings.ToLower(moduleName))
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Service, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakeHandler generates only the transport handler component for a specific module.
+func (s *AetherScaffoldService) MakeHandler(ctx context.Context, startDir, moduleName, transport string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(moduleName, manifest, []string{transport}, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	archPrefix := manifest.Architecture.Pattern
+
+	tmplName := fmt.Sprintf("%s/handler_%s.go.tmpl", archPrefix, transport)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s_handler.go", strings.ToLower(moduleName))
+	
+	destDir := manifest.Architecture.Paths.HandlerHTTP
+	if transport == "grpc" {
+		destDir = manifest.Architecture.Paths.HandlerGRPC
+		if destDir == "" {
+			destDir = "internal/adapter/handler/grpc"
+		}
+	} else if transport != "http" {
+		// fallback for other transports
+		destDir = fmt.Sprintf("internal/adapter/handler/%s", transport)
+	}
+
+	destFile := filepath.Join(projectRoot, destDir, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

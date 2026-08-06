@@ -5,6 +5,7 @@ Dokumentasi rancangan arsitektur, keputusan sistem (ADR), dan riwayat implementa
 | RFC ID | Inisiatif Fitur / Arsitektur | Domain / Modul | Target Branch | Status | Tanggal Rilis |
 | :--- | :--- | :--- | :--- | :---: | :---: |
 | `20260806-01` | [Core Engine Scaffolder, CLI Framework & Manifest SSOT](20260806-go-aether-core-scaffolding-engine.md) | Core CLI / Scaffold Engine | `feature/core-engine` | `IMPLEMENTED` | 2026-08-06 |
+| `20260806-02` | [Phase 2: Granular Ecosystem & Middleware Expansion](20260806-go-aether-phase2-ecosystem.md) | Ecosystem Addons | `feature/phase2-ecosystem` | `PROPOSED` | 2026-08-06 |
 
 ### 🗺️ ROADMAP: The 4 Phases of Evolution
 Proyek `go-aether` dibagi menjadi 4 tonggak pencapaian besar:

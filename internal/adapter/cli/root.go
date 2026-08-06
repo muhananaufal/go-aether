@@ -31,6 +31,11 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAdoptCommand(svc, &flags))
 	rootCmd.AddCommand(newDoctorCommand(svc, &flags))
 	rootCmd.AddCommand(newMakeModuleCommand(svc, &flags))
+	rootCmd.AddCommand(newMakeServiceCommand(svc, &flags))
+	rootCmd.AddCommand(newMakeHandlerCommand(svc, &flags))
+	rootCmd.AddCommand(newAddMiddlewareCommand(svc, &flags))
+	rootCmd.AddCommand(newAddCacheCommand(svc, &flags))
+	rootCmd.AddCommand(newAddTransportCommand(svc, &flags))
 
 	return rootCmd
 }

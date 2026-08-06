@@ -20,6 +20,7 @@ type {{ .ModuleNameTitle }}Handler struct {
 	handler := &{{ .ModuleNameTitle }}Handler{service: svc}
 	
 	r.Route("/api/v1/{{ .ModuleNamePkg }}s", func(r chi.Router) {
+		// @aether:inject:middleware
 		r.Post("/", handler.Create)
 		r.Get("/{id}", handler.Get)
 	})
