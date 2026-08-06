@@ -100,20 +100,24 @@ go-aether doctor
 
 While `go-aether` has many commands, most core scaffolding commands share a common set of flags.
 
-### Project Initialization (`init`)
-- `--module` : Go module identifier for `go.mod` (default: `github.com/example/app`).
-- `--arch` : Architecture blueprint (options: `hexagonal`, `clean`, `ddd`; default: `hexagonal`).
-- `--db` : Database engine driver (options: `postgres`, `mysql`, `sqlite`; default: `postgres`).
-- `--router` : HTTP routing framework (options: `chi`, `gin`, `echo`; default: `chi`).
+### Project Lifecycle
+- `init` : `--module`, `--arch`, `--db`, `--router`
+- `adopt` : `--scan` (perform interactive anomaly directory scanning)
+- `doctor` : `--fix` (attempt automatic remediation of manifest inconsistencies)
 
 ### Module Scaffolding (`arch:module`)
 - `--transports` : Comma-separated transport targets (e.g., `http,grpc,nats`; default: `http`).
 - `--cache` : Inject L1/L2 Redis caching decorators into the repository layer.
 - `--worker` : Scaffold async worker job processor for domain events.
 
+### Specific Capabilities
+- `arch:handler` : `--transport` (Transport protocol target, e.g. `http`, `grpc`)
+- `test:stress` : `--engine` / `-e` (Load testing engine: `k6` or `vegeta`)
+
 ### Global Flags (Available on all commands)
 - `--dry-run` : Simulate generation and print to stdout without writing to disk.
-- `--force` or `-f` : Force overwrite existing generated files.
+- `--force` / `-f` : Force overwrite existing generated files.
+- `--verbose` / `-v` : Enable verbose structured logging output for debugging.
 
 ---
 
