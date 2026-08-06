@@ -90,19 +90,32 @@ func newCmdAPIIdempotency(svc port.ScaffoldService, globals *globalFlags) *cobra
 	cmd := &cobra.Command{
 		Use:   "api:idempotency [redis|memory]",
 		Short: "Set up Idempotency-Key validation middleware",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			var engine string
+			if len(args) > 0 {
+				engine = args[0]
+			} else if prompt.IsInteractive() {
+				var err error
+				engine, err = prompt.AskSelect("Idempotency Engine", []string{"redis", "memory"})
+				if err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("accepts 1 arg(s), received 0. (interactive prompt unavailable in CI)")
+			}
+
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddIdempotency(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddIdempotency(cmd.Context(), cwd, engine, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("🔁 Injected [%s] idempotency key engine\n", args[0])
+			fmt.Printf("🔁 Injected [%s] idempotency key engine\n", engine)
 			return nil
 		},
 	}
@@ -198,9 +211,21 @@ func newCmdAPITransport(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	cmd := &cobra.Command{
 		Use:   "api:transport [transport-type]",
 		Short: "Register a new global transport protocol in aether.yaml",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			transport := args[0]
+			var transport string
+			if len(args) > 0 {
+				transport = args[0]
+			} else if prompt.IsInteractive() {
+				var err error
+				transport, err = prompt.AskSelect("Transport Protocol", []string{"http", "grpc", "graphql"})
+				if err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("accepts 1 arg(s), received 0. (interactive prompt unavailable in CI)")
+			}
+
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -224,19 +249,32 @@ func newCmdAPIValidator(svc port.ScaffoldService, globals *globalFlags) *cobra.C
 	cmd := &cobra.Command{
 		Use:   "api:validator [validator-type]",
 		Short: "Set up the struct validation wrapper (e.g. playground)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			var validatorType string
+			if len(args) > 0 {
+				validatorType = args[0]
+			} else if prompt.IsInteractive() {
+				var err error
+				validatorType, err = prompt.AskSelect("Validator Wrapper", []string{"playground"})
+				if err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("accepts 1 arg(s), received 0. (interactive prompt unavailable in CI)")
+			}
+
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
 
-			err = svc.AddValidator(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			err = svc.AddValidator(cmd.Context(), cwd, validatorType, globals.DryRun, force)
 			if err != nil {
 				return err
 			}
 
-			fmt.Printf("✅ Injected [%s] struct validation wrapper\n", args[0])
+			fmt.Printf("✅ Injected [%s] struct validation wrapper\n", validatorType)
 			return nil
 		},
 	}

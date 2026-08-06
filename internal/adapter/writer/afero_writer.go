@@ -110,7 +110,7 @@ func errorsIsNotExist(err error) bool {
 type UOWWriter struct {
 	baseWriter port.FileWriter
 	pending    []bufferedFile
-	written    []string
+	written    []writtenFile
 }
 
 type bufferedFile struct {
@@ -120,12 +120,17 @@ type bufferedFile struct {
 	dryRun    bool
 }
 
+type writtenFile struct {
+	path           string
+	wasOverwritten bool
+}
+
 // NewUOWWriter constructs a transactional wrapper around an existing FileWriter.
 func NewUOWWriter(base port.FileWriter) *UOWWriter {
 	return &UOWWriter{
 		baseWriter: base,
 		pending:    make([]bufferedFile, 0),
-		written:    make([]string, 0),
+		written:    make([]writtenFile, 0),
 	}
 }
 
@@ -143,12 +148,15 @@ func (t *UOWWriter) WriteFile(ctx context.Context, targetPath string, content []
 // Commit executes all staged write operations sequentially. If any step fails, an atomic rollback is performed.
 func (t *UOWWriter) Commit(ctx context.Context) error {
 	for _, bf := range t.pending {
+		exists, _ := t.baseWriter.Exists(bf.path)
+		wasOverwritten := exists && bf.overwrite
+
 		if err := t.baseWriter.WriteFile(ctx, bf.path, bf.content, bf.overwrite, bf.dryRun); err != nil {
 			t.Rollback()
 			return fmt.Errorf("%w: error writing %s: %v (transaction rolled back)", domain.ErrWriteFailed, bf.path, err)
 		}
 		if !bf.dryRun {
-			t.written = append(t.written, bf.path)
+			t.written = append(t.written, writtenFile{path: bf.path, wasOverwritten: wasOverwritten})
 		}
 	}
 	t.pending = nil
@@ -158,7 +166,16 @@ func (t *UOWWriter) Commit(ctx context.Context) error {
 // Rollback iterates backwards over successfully written files and removes them to leave a clean git tree.
 func (t *UOWWriter) Rollback() {
 	for i := len(t.written) - 1; i >= 0; i-- {
-		_ = t.baseWriter.DeleteFile(t.written[i])
+		wf := t.written[i]
+		_ = t.baseWriter.DeleteFile(wf.path)
+		
+		if wf.wasOverwritten {
+			if backupData, err := t.baseWriter.ReadFile(wf.path + ".bak"); err == nil {
+				// Restore original content from .bak. Since the file was just deleted, overwrite=false is fine.
+				_ = t.baseWriter.WriteFile(context.Background(), wf.path, backupData, false, false)
+				_ = t.baseWriter.DeleteFile(wf.path + ".bak")
+			}
+		}
 	}
 	t.written = nil
 	t.pending = nil
