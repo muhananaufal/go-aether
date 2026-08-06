@@ -40,7 +40,7 @@ We use a **Domain-First** taxonomy for all commands. **DO NOT** use verb-first (
 3. **Always run tests after changes**: Use `go test -v ./...` and ensure all tests pass. E2E tests are required for new commands.
 4. **Zero Magic**: Code must be explicit, strictly typed, and idiomatic. No reflect magic unless absolutely necessary.
 5. **Update README.md**: If you add a new command or flag, you MUST update `README.md` to reflect the changes.
-6. **Maintain SSOT**: Ensure that changes to commands are reflected in `internal/adapter/cli/root.go` and the corresponding service interface in `internal/core/port/generator.go`.
+6. **Maintain SSOT & Internal Taxonomy**: Ensure that changes to commands are reflected in `internal/adapter/cli/root.go` and the corresponding service interface in `internal/core/port/generator.go`. The physical file names and function names inside `internal/adapter/cli/` **MUST** strictly follow the domain taxonomy (e.g., `cmd_arch.go` for `arch:*` commands, and function names like `newCmdApiMiddleware` for `api:middleware`).
 
 ## 4. Development Workflow
 - Run `go build -o bin/aether.exe .` to compile the binary.
