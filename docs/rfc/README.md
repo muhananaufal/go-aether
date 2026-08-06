@@ -4,7 +4,14 @@ Dokumentasi rancangan arsitektur, keputusan sistem (ADR), dan riwayat implementa
 
 | RFC ID | Inisiatif Fitur / Arsitektur | Domain / Modul | Target Branch | Status | Tanggal Rilis |
 | :--- | :--- | :--- | :--- | :---: | :---: |
-| `20260806-01` | [Core Engine Scaffolder, CLI Framework & Manifest SSOT](20260806-go-aether-core-scaffolding-engine.md) | Core CLI / Scaffold Engine | `feature/core-engine` | `ACCEPTED` | 2026-08-06 |
+| `20260806-01` | [Core Engine Scaffolder, CLI Framework & Manifest SSOT](20260806-go-aether-core-scaffolding-engine.md) | Core CLI / Scaffold Engine | `feature/core-engine` | `IMPLEMENTED` | 2026-08-06 |
+
+### 🗺️ ROADMAP: The 4 Phases of Evolution
+Proyek `go-aether` dibagi menjadi 4 tonggak pencapaian besar:
+- **Fase 1: The Core Engine (v1.0.0)** — Mesin CLI dasar, sistem penulisan transaksional, YAML resolver, dan pembentukan struktur murni Hexagonal (Domain ke Repository). *(SELESAI)*
+- **Fase 2: Granular Ecosystem & Middleware** — Membangun generator `make:*` parsial dan injeksi `add:middleware` (JWT, Rate Limit, Auth, dsb) untuk operasional standar industri.
+- **Fase 3: Distributed Systems & Observability** — Membangun `add:worker` (Kafka/Redis), Sagas (Temporal), Metrics (Prometheus), dan arsitektur *High-Frequency*.
+- **Fase 4: Cloud-Native, CI/CD & AI** — Otomasi `add:cicd`, `add:deploy` (K8s/Helm), integrasi `add:ai` (LLM), dan sihir adopsi kode lama (`adopt --scan` dengan AST parsing).
 
 ### Panduan Siklus Status RFC:
 * `PROPOSED`: Sedang dalam tahap perancangan & review (menunggu "Gasskan").
