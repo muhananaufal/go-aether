@@ -73,6 +73,12 @@ type ScaffoldService interface {
 	// MakeRepository generates only the infrastructure repository for a specific module.
 	MakeRepository(ctx context.Context, startDir, moduleName string, dryRun, force bool) error
 
+	// MakeMigration generates a SQL migration file pair (up/down).
+	MakeMigration(ctx context.Context, startDir, name string, dryRun, force bool) error
+
+	// MakeSeeder generates a database seeder file.
+	MakeSeeder(ctx context.Context, startDir, name string, dryRun, force bool) error
+
 	// AddMiddleware injects middleware components into a target module's transport handler.
 	AddMiddleware(ctx context.Context, startDir, moduleName, middlewareType string, dryRun, force bool) error
 
@@ -114,4 +120,10 @@ type ScaffoldService interface {
 
 	// AddValidator sets up the struct validation wrapper (e.g. go-playground/validator).
 	AddValidator(ctx context.Context, startDir, validatorType string, dryRun, force bool) error
+
+	// AddTest scaffolds standard integration test setup and helpers.
+	AddTest(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddMultitenancy scaffolds Row Level Security (RLS) SQL policies for tenant isolation.
+	AddMultitenancy(ctx context.Context, startDir, moduleName string, dryRun, force bool) error
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/muhananaufal/go-aether/internal/adapter/writer"
 	"github.com/muhananaufal/go-aether/internal/core/domain"
@@ -255,6 +256,68 @@ func (s *AetherScaffoldService) MakeRepository(ctx context.Context, startDir, mo
 
 	fileName := fmt.Sprintf("%s_repository.go", strings.ToLower(moduleName))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Repository, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakeMigration generates a SQL migration file pair (up/down).
+func (s *AetherScaffoldService) MakeMigration(ctx context.Context, startDir, name string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(name, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	
+	upContent, err := s.engine.Render(ctx, "common/migration_up.sql.tmpl", data)
+	if err != nil {
+		return err
+	}
+	downContent, err := s.engine.Render(ctx, "common/migration_down.sql.tmpl", data)
+	if err != nil {
+		return err
+	}
+
+	timestamp := time.Now().Format("20060102150405")
+	baseName := fmt.Sprintf("%s_%s", timestamp, strings.ToLower(name))
+	
+	upDest := filepath.Join(projectRoot, "migrations", fmt.Sprintf("%s.up.sql", baseName))
+	downDest := filepath.Join(projectRoot, "migrations", fmt.Sprintf("%s.down.sql", baseName))
+
+	tx.Stage(upDest, upContent, force, dryRun)
+	tx.Stage(downDest, downContent, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakeSeeder generates a database seeder file.
+func (s *AetherScaffoldService) MakeSeeder(ctx context.Context, startDir, name string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(name, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	
+	content, err := s.engine.Render(ctx, "common/seeder.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+
+	destFile := filepath.Join(projectRoot, "cmd", "seeder", fmt.Sprintf("%s.go", strings.ToLower(name)))
 	tx.Stage(destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)

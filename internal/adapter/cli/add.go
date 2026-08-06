@@ -386,3 +386,55 @@ func newAddValidatorCommand(svc port.ScaffoldService, globals *globalFlags) *cob
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing validator file")
 	return cmd
 }
+
+func newAddTestCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:test",
+		Short: "Set up the integration test helpers and mocking base",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddTest(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("🧪 Injected integration test setup")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing test file")
+	return cmd
+}
+
+func newAddMultitenancyCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:multitenancy [module-name]",
+		Short: "Set up Row Level Security (RLS) SQL policies for tenant isolation",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddMultitenancy(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🏢 Injected multitenancy RLS script for [%s]\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing multitenancy file")
+	return cmd
+}
