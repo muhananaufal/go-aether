@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"fmt"
-	"io"
 	"path/filepath"
 	"strings"
 
@@ -26,24 +25,6 @@ func NewAetherScaffoldService(engine port.TemplateEngine, resolver port.Manifest
 		resolver: resolver,
 		fs:       fs,
 	}
-}
-
-// InitProject bootstraps a new greenfield project.
-func (s *AetherScaffoldService) InitProject(ctx context.Context, destDir, projectName, moduleName, arch, dbDriver, router string, dryRun bool) error {
-	// Implemented in next batch
-	return nil
-}
-
-// AdoptProject scans and absorbs a brownfield repository into go-aether.
-func (s *AetherScaffoldService) AdoptProject(ctx context.Context, destDir string, scan, dryRun bool) error {
-	// Implemented in next batch
-	return nil
-}
-
-// RunDoctor performs structural validation against the manifest.
-func (s *AetherScaffoldService) RunDoctor(ctx context.Context, startDir string, fix bool, out io.Writer) error {
-	// Implemented in next batch
-	return nil
 }
 
 // MakeModule generates all vertical slice components for a new module feature.
