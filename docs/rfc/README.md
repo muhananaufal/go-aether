@@ -26,6 +26,7 @@ Dokumentasi rancangan arsitektur, keputusan sistem (ADR), dan riwayat implementa
 | `20260806-16` | [Phase 14: Enterprise SQLC, Advanced gRPC Streaming & Multi-Tenancy](20260806-go-aether-phase14-enterprise-sqlc-grpc-multitenancy.md) | SQLC, gRPC & Tenant | `feature/v0.8.8-sqlc-grpc-multitenancy` | `v0.8.8` | `IMPLEMENTED` | 2026-08-06 |
 | `20260806-17` | [Phase 15: Concurrency Pipelines, Zero-Trust & Observability](20260806-go-aether-phase15-concurrency-zerotrust.md) | Concurrency & Security | `feature/v0.8.9-concurrency-zerotrust` | `v0.8.9` | `IMPLEMENTED` | 2026-08-06 |
 | `20260807-01` | [Phase 16: The Final Gap to v1.0.0](20260807-go-aether-v0.9.0-final-gap.md) | CLI Gap Closure | `feature/v0.9.0-final-gap` | `v0.9.0` | `IMPLEMENTED` | 2026-08-07 |
+| `20260807-02` | [Advanced UX & DX Deep Dive Overhaul](20260807-ux-dx-deep-dive.md) | Core CLI / UX | `feature/ux-dx-deep-dive` | `v0.2.0` | `PROPOSED` | - |
 
 ---
 

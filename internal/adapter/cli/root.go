@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/muhananaufal/go-aether/internal/adapter/config"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -24,6 +25,24 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 		Version:       fmt.Sprintf("%s\ncommit: %s\nbuilt at: %s", version, commit, date),
 		SilenceUsage:  true,
 		SilenceErrors: false,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.LoadConfig()
+			if err != nil || cfg == nil {
+				return nil
+			}
+
+			// Apply context memory to flags if they were not explicitly provided
+			if !cmd.Flags().Changed("engine") && cfg.Preferences.Engine != "" && cmd.Flags().Lookup("engine") != nil {
+				_ = cmd.Flags().Set("engine", cfg.Preferences.Engine)
+			}
+			if !cmd.Flags().Changed("orm") && cfg.Preferences.ORM != "" && cmd.Flags().Lookup("orm") != nil {
+				_ = cmd.Flags().Set("orm", cfg.Preferences.ORM)
+			}
+			if !cmd.Flags().Changed("architecture") && cfg.Preferences.Architecture != "" && cmd.Flags().Lookup("architecture") != nil {
+				_ = cmd.Flags().Set("architecture", cfg.Preferences.Architecture)
+			}
+			return nil
+		},
 	}
 
 	rootCmd.SetVersionTemplate("go-aether version {{.Version}}\n")

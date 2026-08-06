@@ -3,7 +3,9 @@ package cli
 import (
 	"fmt"
 	"os"
+	"strings"
 
+	"github.com/muhananaufal/go-aether/internal/adapter/cli/prompt"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -232,12 +234,35 @@ func newCmdArchModule(svc port.ScaffoldService, globals *globalFlags) *cobra.Com
 	cmd := &cobra.Command{
 		Use:   "arch:module [module-name]",
 		Short: "Generate a complete vertical feature slice (Domain, Port, Service, Handler, Repo)",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			moduleName := args[0]
+			var moduleName string
+			if len(args) > 0 {
+				moduleName = args[0]
+			} else if prompt.IsInteractive() {
+				var err error
+				moduleName, err = prompt.AskString("Module Name", "Name of the new vertical slice (e.g. users, products)", true)
+				if err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("accepts 1 arg(s), received 0. (interactive prompt unavailable in CI)")
+			}
+
+			if !cmd.Flags().Changed("transports") && prompt.IsInteractive() {
+				t, err := prompt.AskString("Transports", "Comma-separated transport targets (e.g. http, grpc)", false)
+				if err == nil && t != "" {
+					transports = strings.Split(t, ",")
+				}
+			}
+
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
+			}
+
+			if globals.DryRun {
+				prompt.PrintDryRunDiff(fmt.Sprintf("Generate vertical slice for module %s with transports %v", moduleName, transports))
 			}
 
 			err = svc.MakeModule(cmd.Context(), cwd, moduleName, transports, hasCache, hasWorker, globals.DryRun, force)

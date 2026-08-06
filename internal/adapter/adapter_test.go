@@ -52,12 +52,12 @@ func TestAferoWriter_WriteAndConflict(t *testing.T) {
 func TestTransactionalBuffer_RollbackOnFailure(t *testing.T) {
 	memFS := afero.NewReadOnlyFs(afero.NewMemMapFs()) // read-only FS causes writes to fail
 	baseWriter := writer.NewAferoWriter(memFS)
-	tx := writer.NewTransactionalBuffer(baseWriter)
+	tx := writer.NewUOWWriter(baseWriter)
+	ctx := context.Background()
+	_ = tx.WriteFile(ctx, "file1.go", []byte("package test"), true, false)
+	_ = tx.WriteFile(ctx, "file2.go", []byte("package test"), true, false)
 
-	tx.Stage("file1.go", []byte("package test"), true, false)
-	tx.Stage("file2.go", []byte("package test"), true, false)
-
-	err := tx.Commit(context.Background())
+	err := tx.Commit(ctx)
 	if !errors.Is(err, domain.ErrWriteFailed) {
 		t.Errorf("expected ErrWriteFailed when writing to read-only disk, got %v", err)
 	}

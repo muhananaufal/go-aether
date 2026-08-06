@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/muhananaufal/go-aether/internal/adapter/cli/prompt"
+	"github.com/muhananaufal/go-aether/internal/adapter/config"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -60,17 +62,88 @@ func newCmdInit(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init [project-name]",
 		Short: "Bootstrap a greenfield Go backend project with clean Hexagonal Architecture",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			projectName := args[0]
+			var projectName string
+			if len(args) > 0 {
+				projectName = args[0]
+			} else if prompt.IsInteractive() {
+				var err error
+				projectName, err = prompt.AskString("Project Name", "What is the name of your project? (e.g. invoice-api)", true)
+				if err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("accepts 1 arg(s), received 0. (interactive prompt unavailable in CI)")
+			}
+
+			if !cmd.Flags().Changed("module") && prompt.IsInteractive() {
+				mod, err := prompt.AskString("Go Module Name", "e.g. github.com/username/"+projectName, true)
+				if err != nil {
+					return err
+				}
+				moduleName = mod
+			}
+
+			if !cmd.Flags().Changed("arch") && prompt.IsInteractive() {
+				selectedArch, err := prompt.AskSelect("Architecture Pattern", []string{"hexagonal", "clean", "ddd"})
+				if err != nil {
+					return err
+				}
+				arch = selectedArch
+			}
+
+			if !cmd.Flags().Changed("db") && prompt.IsInteractive() {
+				selectedDB, err := prompt.AskSelect("Database Engine", []string{"postgres", "mysql", "sqlite", "none"})
+				if err != nil {
+					return err
+				}
+				dbDriver = selectedDB
+			}
+
+			if !cmd.Flags().Changed("router") && prompt.IsInteractive() {
+				selectedRouter, err := prompt.AskSelect("HTTP Router", []string{"chi", "gin", "echo", "fiber", "mux"})
+				if err != nil {
+					return err
+				}
+				router = selectedRouter
+			}
+
 			cwd, err := os.Getwd()
 			if err != nil {
 				return fmt.Errorf("failed resolving current working directory: %w", err)
 			}
 
+			if globals.DryRun {
+				prompt.PrintDryRunDiff(fmt.Sprintf("Init project %s with %s / %s / %s", projectName, arch, dbDriver, router))
+			}
+
 			if err := svc.InitProject(cmd.Context(), cwd, projectName, moduleName, arch, dbDriver, router, globals.DryRun); err != nil {
 				return err
 			}
+
+			// Save Context Memory
+			if !globals.DryRun {
+				// Initialize context memory
+				cfg := &config.AetherConfig{
+					Version: 1,
+					Preferences: config.ProjectPreferences{
+						Architecture: arch,
+						ORM:          dbDriver,
+						Engine:       router,
+					},
+				}
+
+				// Ensure config is saved in the project root directory
+				projectRoot := filepath.Join(cwd, projectName)
+
+				// Change working directory temporarily to save config there
+				oldWd, _ := os.Getwd()
+				_ = os.Chdir(projectRoot)
+				_ = config.SaveConfig(cfg)
+				_ = os.Chdir(oldWd)
+			}
+
 			fmt.Printf("🚀 Successfully initialized project [%s] with [%s] architecture!\n", projectName, arch)
 			return nil
 		},

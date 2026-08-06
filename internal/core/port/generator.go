@@ -33,6 +33,16 @@ type FileWriter interface {
 
 	// MkdirAll ensures the full directory tree exists for a target path before writing.
 	MkdirAll(dirPath string) error
+
+	// BeginTransaction returns a new TransactionalWriter decorator that buffers writes in memory.
+	BeginTransaction() TransactionalWriter
+}
+
+// TransactionalWriter extends FileWriter to support Atomic Rollbacks.
+type TransactionalWriter interface {
+	FileWriter
+	Commit(ctx context.Context) error
+	Rollback()
 }
 
 // ManifestResolver abstracts locating, parsing, and persisting the aether.yaml manifest file.

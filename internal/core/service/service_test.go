@@ -21,12 +21,12 @@ func TestAetherScaffoldService_E2E_InitAndMakeModule(t *testing.T) {
 
 	// Mock embedded templates matching real layout
 	mockEmbed := fstest.MapFS{
-		"common/aether_yaml.tmpl":                      &fstest.MapFile{Data: []byte("version: \"1\"")},
-		"hexagonal/domain.go.tmpl":                     &fstest.MapFile{Data: []byte("package domain\n// domain for {{ .ModuleNameTitle }}")},
-		"hexagonal/port.go.tmpl":                       &fstest.MapFile{Data: []byte("package port\n// port for {{ .ModuleNameTitle }}")},
-		"hexagonal/service.go.tmpl":                    &fstest.MapFile{Data: []byte("package service\n// service for {{ .ModuleNameTitle }}")},
-		"hexagonal/handler_http.go.tmpl":               &fstest.MapFile{Data: []byte("package http\n// http handler for {{ .ModuleNameTitle }}")},
-		"hexagonal/repository_postgres.go.tmpl":        &fstest.MapFile{Data: []byte("package repository\n// repo for {{ .ModuleNameTitle }}")},
+		"common/aether_yaml.tmpl":               &fstest.MapFile{Data: []byte("version: \"1\"")},
+		"hexagonal/domain.go.tmpl":              &fstest.MapFile{Data: []byte("package domain\n// domain for {{ .ModuleNameTitle }}")},
+		"hexagonal/port.go.tmpl":                &fstest.MapFile{Data: []byte("package port\n// port for {{ .ModuleNameTitle }}")},
+		"hexagonal/service.go.tmpl":             &fstest.MapFile{Data: []byte("package service\n// service for {{ .ModuleNameTitle }}")},
+		"hexagonal/handler_http.go.tmpl":        &fstest.MapFile{Data: []byte("package http\n// http handler for {{ .ModuleNameTitle }}")},
+		"hexagonal/repository_postgres.go.tmpl": &fstest.MapFile{Data: []byte("package repository\n// repo for {{ .ModuleNameTitle }}")},
 	}
 
 	engine := template.NewStdEngine(mockEmbed)
@@ -84,15 +84,15 @@ func TestAetherScaffoldService_Phase13_TestingAndQASuite(t *testing.T) {
 	resolver := manifest.NewYamlResolver(w)
 
 	mockEmbed := fstest.MapFS{
-		"common/aether_yaml.tmpl":               &fstest.MapFile{Data: []byte("version: \"1\"")},
-		"plugins/stress_k6.js.tmpl":             &fstest.MapFile{Data: []byte("// k6 stress test for {{ .ModuleName }}")},
-		"plugins/stress_vegeta.sh.tmpl":         &fstest.MapFile{Data: []byte("# vegeta stress test for {{ .ModuleNameTitle }}")},
-		"plugins/chaos.go.tmpl":                 &fstest.MapFile{Data: []byte("package middleware\n// chaos middleware")},
-		"plugins/fuzz_test.go.tmpl":             &fstest.MapFile{Data: []byte("package fuzz_test\n// fuzz test")},
-		"plugins/benchmark_test.go.tmpl":        &fstest.MapFile{Data: []byte("package bench_test\n// benchmark test")},
-		"plugins/testcontainers_test.go.tmpl":   &fstest.MapFile{Data: []byte("package integration_test\n// testcontainers")},
-		"plugins/mutation_test.ps1.tmpl":        &fstest.MapFile{Data: []byte("# mutation test script")},
-		"plugins/mock.go.tmpl":                  &fstest.MapFile{Data: []byte("package mocks\n// mock for {{ .ModuleNameTitle }}")},
+		"common/aether_yaml.tmpl":             &fstest.MapFile{Data: []byte("version: \"1\"")},
+		"plugins/stress_k6.js.tmpl":           &fstest.MapFile{Data: []byte("// k6 stress test for {{ .ModuleName }}")},
+		"plugins/stress_vegeta.sh.tmpl":       &fstest.MapFile{Data: []byte("# vegeta stress test for {{ .ModuleNameTitle }}")},
+		"plugins/chaos.go.tmpl":               &fstest.MapFile{Data: []byte("package middleware\n// chaos middleware")},
+		"plugins/fuzz_test.go.tmpl":           &fstest.MapFile{Data: []byte("package fuzz_test\n// fuzz test")},
+		"plugins/benchmark_test.go.tmpl":      &fstest.MapFile{Data: []byte("package bench_test\n// benchmark test")},
+		"plugins/testcontainers_test.go.tmpl": &fstest.MapFile{Data: []byte("package integration_test\n// testcontainers")},
+		"plugins/mutation_test.ps1.tmpl":      &fstest.MapFile{Data: []byte("# mutation test script")},
+		"plugins/mock.go.tmpl":                &fstest.MapFile{Data: []byte("package mocks\n// mock for {{ .ModuleNameTitle }}")},
 	}
 
 	engine := template.NewStdEngine(mockEmbed)
@@ -183,14 +183,14 @@ func TestAetherScaffoldService_Phase14_SQLC_GRPC_MultiTenancy(t *testing.T) {
 	resolver := manifest.NewYamlResolver(w)
 
 	mockEmbed := fstest.MapFS{
-		"common/aether_yaml.tmpl":               &fstest.MapFile{Data: []byte("version: \"1\"")},
-		"plugins/sqlc_yaml.tmpl":                &fstest.MapFile{Data: []byte("version: \"2\"")},
-		"plugins/sqlc_schema.sql.tmpl":          &fstest.MapFile{Data: []byte("CREATE TABLE accounts ();")},
-		"plugins/sqlc_query.sql.tmpl":           &fstest.MapFile{Data: []byte("-- name: GetAccountByID :one\nSELECT 1;")},
-		"plugins/grpc_stream.proto.tmpl":        &fstest.MapFile{Data: []byte("syntax = \"proto3\";")},
-		"plugins/grpc_stream.go.tmpl":           &fstest.MapFile{Data: []byte("package grpc\n// stream handler")},
-		"plugins/grpc_gateway.go.tmpl":          &fstest.MapFile{Data: []byte("package http\n// grpc gateway")},
-		"plugins/tenant_context.go.tmpl":        &fstest.MapFile{Data: []byte("package tenant\n// tenant context")},
+		"common/aether_yaml.tmpl":        &fstest.MapFile{Data: []byte("version: \"1\"")},
+		"plugins/sqlc_yaml.tmpl":         &fstest.MapFile{Data: []byte("version: \"2\"")},
+		"plugins/sqlc_schema.sql.tmpl":   &fstest.MapFile{Data: []byte("CREATE TABLE accounts ();")},
+		"plugins/sqlc_query.sql.tmpl":    &fstest.MapFile{Data: []byte("-- name: GetAccountByID :one\nSELECT 1;")},
+		"plugins/grpc_stream.proto.tmpl": &fstest.MapFile{Data: []byte("syntax = \"proto3\";")},
+		"plugins/grpc_stream.go.tmpl":    &fstest.MapFile{Data: []byte("package grpc\n// stream handler")},
+		"plugins/grpc_gateway.go.tmpl":   &fstest.MapFile{Data: []byte("package http\n// grpc gateway")},
+		"plugins/tenant_context.go.tmpl": &fstest.MapFile{Data: []byte("package tenant\n// tenant context")},
 	}
 
 	engine := template.NewStdEngine(mockEmbed)
@@ -258,15 +258,15 @@ func TestAetherScaffoldService_Phase15_Concurrency_ZeroTrust(t *testing.T) {
 	resolver := manifest.NewYamlResolver(w)
 
 	mockEmbed := fstest.MapFS{
-		"common/aether_yaml.tmpl":              &fstest.MapFile{Data: []byte("version: \"1\"\narchitecture:\n  paths:\n    domain: internal/core/domain\n    port: internal/core/port\n    service: internal/core/service\n    handler_http: internal/adapter/handler/http\n    repository: internal/adapter/repository\n    cmd: cmd/server\n    pkg: pkg")},
-		"plugins/pipeline.go.tmpl":             &fstest.MapFile{Data: []byte("package concurrency\n// pipeline")},
-		"plugins/singleflight.go.tmpl":         &fstest.MapFile{Data: []byte("package concurrency\n// singleflight")},
-		"plugins/metrics.go.tmpl":              &fstest.MapFile{Data: []byte("package middleware\n// metrics")},
-		"plugins/drain.go.tmpl":                &fstest.MapFile{Data: []byte("package server\n// drain")},
-		"plugins/oauth2.go.tmpl":               &fstest.MapFile{Data: []byte("package http\n// oauth2")},
-		"plugins/auditlog.go.tmpl":             &fstest.MapFile{Data: []byte("package middleware\n// auditlog")},
-		"plugins/argon2.go.tmpl":               &fstest.MapFile{Data: []byte("package security\n// argon2")},
-		"plugins/specification.go.tmpl":        &fstest.MapFile{Data: []byte("package domain\n// specification")},
+		"common/aether_yaml.tmpl":       &fstest.MapFile{Data: []byte("version: \"1\"\narchitecture:\n  paths:\n    domain: internal/core/domain\n    port: internal/core/port\n    service: internal/core/service\n    handler_http: internal/adapter/handler/http\n    repository: internal/adapter/repository\n    cmd: cmd/server\n    pkg: pkg")},
+		"plugins/pipeline.go.tmpl":      &fstest.MapFile{Data: []byte("package concurrency\n// pipeline")},
+		"plugins/singleflight.go.tmpl":  &fstest.MapFile{Data: []byte("package concurrency\n// singleflight")},
+		"plugins/metrics.go.tmpl":       &fstest.MapFile{Data: []byte("package middleware\n// metrics")},
+		"plugins/drain.go.tmpl":         &fstest.MapFile{Data: []byte("package server\n// drain")},
+		"plugins/oauth2.go.tmpl":        &fstest.MapFile{Data: []byte("package http\n// oauth2")},
+		"plugins/auditlog.go.tmpl":      &fstest.MapFile{Data: []byte("package middleware\n// auditlog")},
+		"plugins/argon2.go.tmpl":        &fstest.MapFile{Data: []byte("package security\n// argon2")},
+		"plugins/specification.go.tmpl": &fstest.MapFile{Data: []byte("package domain\n// specification")},
 	}
 
 	engine := template.NewStdEngine(mockEmbed)
@@ -313,13 +313,13 @@ func TestAetherScaffoldService_Phase16_FinalGap(t *testing.T) {
 	resolver := manifest.NewYamlResolver(w)
 
 	mockEmbed := fstest.MapFS{
-		"common/aether_yaml.tmpl":              &fstest.MapFile{Data: []byte("version: \"1\"\narchitecture:\n  paths:\n    domain: internal/core/domain\n    port: internal/core/port\n    service: internal/core/service\n    handler_http: internal/adapter/handler/http\n    repository: internal/adapter/repository\n    cmd: cmd/server\n    pkg: pkg")},
-		"plugins/lint.yml.tmpl":                &fstest.MapFile{Data: []byte("lint")},
-		"plugins/uow.go.tmpl":                  &fstest.MapFile{Data: []byte("package uow")},
-		"plugins/graphql.go.tmpl":              &fstest.MapFile{Data: []byte("package graphql")},
-		"plugins/readreplica.go.tmpl":          &fstest.MapFile{Data: []byte("package database")},
-		"plugins/openapi.go.tmpl":              &fstest.MapFile{Data: []byte("package http")},
-		"plugins/cursor_paginator.go.tmpl":     &fstest.MapFile{Data: []byte("package pagination")},
+		"common/aether_yaml.tmpl":          &fstest.MapFile{Data: []byte("version: \"1\"\narchitecture:\n  paths:\n    domain: internal/core/domain\n    port: internal/core/port\n    service: internal/core/service\n    handler_http: internal/adapter/handler/http\n    repository: internal/adapter/repository\n    cmd: cmd/server\n    pkg: pkg")},
+		"plugins/lint.yml.tmpl":            &fstest.MapFile{Data: []byte("lint")},
+		"plugins/uow.go.tmpl":              &fstest.MapFile{Data: []byte("package uow")},
+		"plugins/graphql.go.tmpl":          &fstest.MapFile{Data: []byte("package graphql")},
+		"plugins/readreplica.go.tmpl":      &fstest.MapFile{Data: []byte("package database")},
+		"plugins/openapi.go.tmpl":          &fstest.MapFile{Data: []byte("package http")},
+		"plugins/cursor_paginator.go.tmpl": &fstest.MapFile{Data: []byte("package pagination")},
 	}
 
 	engine := template.NewStdEngine(mockEmbed)

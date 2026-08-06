@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhananaufal/go-aether/internal/adapter/writer"
 	"github.com/muhananaufal/go-aether/internal/core/domain"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 )
@@ -34,7 +33,7 @@ func (s *AetherScaffoldService) MakeModule(ctx context.Context, startDir, module
 	if err != nil {
 		return fmt.Errorf("failed to locate aether.yaml: %w", err)
 	}
-	
+
 	if manifest.HasModule(moduleName) && !force {
 		return fmt.Errorf("%w: %s", domain.ErrModuleAlreadyExists, moduleName)
 	}
@@ -45,7 +44,7 @@ func (s *AetherScaffoldService) MakeModule(ctx context.Context, startDir, module
 	}
 
 	// Initialize the transactional buffer
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 	archPrefix := manifest.Architecture.Pattern
 
@@ -71,15 +70,15 @@ func (s *AetherScaffoldService) MakeModule(ctx context.Context, startDir, module
 		if err != nil {
 			return err
 		}
-		
+
 		// e.g. "internal/core/service/order_service.go"
 		fileName := fmt.Sprintf("%s_%s.go", strings.ToLower(moduleName), strings.Split(layer, "_")[0])
 		if layer == "domain" {
 			fileName = fmt.Sprintf("%s.go", strings.ToLower(moduleName))
 		}
-		
+
 		destFile := filepath.Join(projectRoot, relPath, fileName)
-		tx.Stage(destFile, content, force, dryRun)
+		tx.WriteFile(ctx, destFile, content, force, dryRun)
 	}
 
 	// Update manifest
@@ -116,7 +115,7 @@ func (s *AetherScaffoldService) MakeService(ctx context.Context, startDir, modul
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 	archPrefix := manifest.Architecture.Pattern
 
@@ -128,7 +127,7 @@ func (s *AetherScaffoldService) MakeService(ctx context.Context, startDir, modul
 
 	fileName := fmt.Sprintf("%s_service.go", strings.ToLower(moduleName))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Service, fileName)
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -145,7 +144,7 @@ func (s *AetherScaffoldService) MakeHandler(ctx context.Context, startDir, modul
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 	archPrefix := manifest.Architecture.Pattern
 
@@ -156,7 +155,7 @@ func (s *AetherScaffoldService) MakeHandler(ctx context.Context, startDir, modul
 	}
 
 	fileName := fmt.Sprintf("%s_handler.go", strings.ToLower(moduleName))
-	
+
 	destDir := manifest.Architecture.Paths.HandlerHTTP
 	if transport == "grpc" {
 		destDir = manifest.Architecture.Paths.HandlerGRPC
@@ -169,7 +168,7 @@ func (s *AetherScaffoldService) MakeHandler(ctx context.Context, startDir, modul
 	}
 
 	destFile := filepath.Join(projectRoot, destDir, fileName)
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -186,7 +185,7 @@ func (s *AetherScaffoldService) MakeDomain(ctx context.Context, startDir, module
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 	archPrefix := manifest.Architecture.Pattern
 
@@ -198,7 +197,7 @@ func (s *AetherScaffoldService) MakeDomain(ctx context.Context, startDir, module
 
 	fileName := fmt.Sprintf("%s.go", strings.ToLower(moduleName))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -215,7 +214,7 @@ func (s *AetherScaffoldService) MakePort(ctx context.Context, startDir, moduleNa
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 	archPrefix := manifest.Architecture.Pattern
 
@@ -227,7 +226,7 @@ func (s *AetherScaffoldService) MakePort(ctx context.Context, startDir, moduleNa
 
 	fileName := fmt.Sprintf("%s_port.go", strings.ToLower(moduleName))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Port, fileName)
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -244,7 +243,7 @@ func (s *AetherScaffoldService) MakeRepository(ctx context.Context, startDir, mo
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 	archPrefix := manifest.Architecture.Pattern
 
@@ -256,7 +255,7 @@ func (s *AetherScaffoldService) MakeRepository(ctx context.Context, startDir, mo
 
 	fileName := fmt.Sprintf("%s_repository.go", strings.ToLower(moduleName))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Repository, fileName)
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -273,9 +272,9 @@ func (s *AetherScaffoldService) MakeMigration(ctx context.Context, startDir, nam
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
-	
+
 	upContent, err := s.engine.Render(ctx, "common/migration_up.sql.tmpl", data)
 	if err != nil {
 		return err
@@ -287,12 +286,12 @@ func (s *AetherScaffoldService) MakeMigration(ctx context.Context, startDir, nam
 
 	timestamp := time.Now().Format("20060102150405")
 	baseName := fmt.Sprintf("%s_%s", timestamp, strings.ToLower(name))
-	
+
 	upDest := filepath.Join(projectRoot, "migrations", fmt.Sprintf("%s.up.sql", baseName))
 	downDest := filepath.Join(projectRoot, "migrations", fmt.Sprintf("%s.down.sql", baseName))
 
-	tx.Stage(upDest, upContent, force, dryRun)
-	tx.Stage(downDest, downContent, force, dryRun)
+	tx.WriteFile(ctx, upDest, upContent, force, dryRun)
+	tx.WriteFile(ctx, downDest, downContent, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -309,7 +308,7 @@ func (s *AetherScaffoldService) MakePipeline(ctx context.Context, startDir, name
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 	pkgDir := manifest.Architecture.Paths.Pkg
 	if pkgDir == "" {
@@ -323,7 +322,7 @@ func (s *AetherScaffoldService) MakePipeline(ctx context.Context, startDir, name
 	}
 	// Prefix with name to allow multiple pipelines
 	fileName := fmt.Sprintf("%s_pipeline.go", strings.ToLower(name))
-	tx.Stage(filepath.Join(destDir, fileName), content, force, dryRun)
+	tx.WriteFile(ctx, filepath.Join(destDir, fileName), content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -340,7 +339,7 @@ func (s *AetherScaffoldService) MakeSpecification(ctx context.Context, startDir,
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 	domainDir := manifest.Architecture.Paths.Domain
 	if domainDir == "" {
@@ -353,7 +352,7 @@ func (s *AetherScaffoldService) MakeSpecification(ctx context.Context, startDir,
 		return err
 	}
 	fileName := fmt.Sprintf("%s_specification.go", strings.ToLower(name))
-	tx.Stage(filepath.Join(destDir, fileName), content, force, dryRun)
+	tx.WriteFile(ctx, filepath.Join(destDir, fileName), content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -370,16 +369,16 @@ func (s *AetherScaffoldService) MakeSeeder(ctx context.Context, startDir, name s
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
-	
+
 	content, err := s.engine.Render(ctx, "common/seeder.go.tmpl", data)
 	if err != nil {
 		return err
 	}
 
 	destFile := filepath.Join(projectRoot, "cmd", "seeder", fmt.Sprintf("%s.go", strings.ToLower(name)))
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -396,7 +395,7 @@ func (s *AetherScaffoldService) MakeValueObject(ctx context.Context, startDir, n
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 
 	content, err := s.engine.Render(ctx, "hexagonal/valueobject.go.tmpl", data)
@@ -406,7 +405,7 @@ func (s *AetherScaffoldService) MakeValueObject(ctx context.Context, startDir, n
 
 	fileName := fmt.Sprintf("%s_vo.go", strings.ToLower(name))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -423,7 +422,7 @@ func (s *AetherScaffoldService) MakeAggregate(ctx context.Context, startDir, nam
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 
 	content, err := s.engine.Render(ctx, "hexagonal/aggregate.go.tmpl", data)
@@ -433,7 +432,7 @@ func (s *AetherScaffoldService) MakeAggregate(ctx context.Context, startDir, nam
 
 	fileName := fmt.Sprintf("%s_aggregate.go", strings.ToLower(name))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -450,7 +449,7 @@ func (s *AetherScaffoldService) MakeEvent(ctx context.Context, startDir, name st
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 
 	content, err := s.engine.Render(ctx, "hexagonal/event.go.tmpl", data)
@@ -460,7 +459,7 @@ func (s *AetherScaffoldService) MakeEvent(ctx context.Context, startDir, name st
 
 	fileName := fmt.Sprintf("%s_event.go", strings.ToLower(name))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -477,7 +476,7 @@ func (s *AetherScaffoldService) MakeCommand(ctx context.Context, startDir, name 
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 
 	content, err := s.engine.Render(ctx, "hexagonal/command.go.tmpl", data)
@@ -487,7 +486,7 @@ func (s *AetherScaffoldService) MakeCommand(ctx context.Context, startDir, name 
 
 	fileName := fmt.Sprintf("%s_command.go", strings.ToLower(name))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Service, fileName)
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -504,7 +503,7 @@ func (s *AetherScaffoldService) MakeQuery(ctx context.Context, startDir, name st
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
 
 	content, err := s.engine.Render(ctx, "hexagonal/query.go.tmpl", data)
@@ -514,7 +513,7 @@ func (s *AetherScaffoldService) MakeQuery(ctx context.Context, startDir, name st
 
 	fileName := fmt.Sprintf("%s_query.go", strings.ToLower(name))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Service, fileName)
-	tx.Stage(destFile, content, force, dryRun)
+	tx.WriteFile(ctx, destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
 }
@@ -531,9 +530,9 @@ func (s *AetherScaffoldService) MakeCursorPaginator(ctx context.Context, startDi
 		return err
 	}
 
-	tx := writer.NewTransactionalBuffer(s.fs)
+	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
-	
+
 	pkgDir := manifest.Architecture.Paths.Pkg
 	if pkgDir == "" {
 		pkgDir = "pkg"
@@ -544,7 +543,7 @@ func (s *AetherScaffoldService) MakeCursorPaginator(ctx context.Context, startDi
 	if err != nil {
 		return err
 	}
-	tx.Stage(filepath.Join(destDir, "cursor.go"), content, force, dryRun)
+	tx.WriteFile(ctx, filepath.Join(destDir, "cursor.go"), content, force, dryRun)
 
 	return tx.Commit(ctx)
 }

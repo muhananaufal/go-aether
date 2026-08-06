@@ -69,6 +69,11 @@ func (w *AferoWriter) Exists(path string) (bool, error) {
 	return exists, nil
 }
 
+// BeginTransaction returns a TransactionalWriter decorator.
+func (w *AferoWriter) BeginTransaction() port.TransactionalWriter {
+	return NewUOWWriter(w)
+}
+
 // ReadFile retrieves binary contents from an existing filesystem file.
 func (w *AferoWriter) ReadFile(path string) ([]byte, error) {
 	data, err := afero.ReadFile(w.fs, path)
@@ -100,8 +105,9 @@ func errorsIsNotExist(err error) bool {
 	return err == fs.ErrNotExist
 }
 
-// TransactionalBuffer implements an in-memory buffer that rolls back written files upon encountering an I/O failure.
-type TransactionalBuffer struct {
+// UOWWriter implements port.FileWriter as a Unit of Work decorator that buffers writes in memory.
+// It commits them atomically and rolls back on failure to maintain a clean git tree.
+type UOWWriter struct {
 	baseWriter port.FileWriter
 	pending    []bufferedFile
 	written    []string
@@ -114,27 +120,28 @@ type bufferedFile struct {
 	dryRun    bool
 }
 
-// NewTransactionalBuffer constructs a transactional wrapper around an existing FileWriter.
-func NewTransactionalBuffer(base port.FileWriter) *TransactionalBuffer {
-	return &TransactionalBuffer{
+// NewUOWWriter constructs a transactional wrapper around an existing FileWriter.
+func NewUOWWriter(base port.FileWriter) *UOWWriter {
+	return &UOWWriter{
 		baseWriter: base,
 		pending:    make([]bufferedFile, 0),
 		written:    make([]string, 0),
 	}
 }
 
-// Stage enqueues a file operation into memory without executing immediate disk mutations.
-func (t *TransactionalBuffer) Stage(path string, content []byte, overwrite, dryRun bool) {
+// WriteFile intercepts file writes and stages them into memory. It returns nil.
+func (t *UOWWriter) WriteFile(ctx context.Context, targetPath string, content []byte, overwrite, dryRun bool) error {
 	t.pending = append(t.pending, bufferedFile{
-		path:      path,
+		path:      targetPath,
 		content:   content,
 		overwrite: overwrite,
 		dryRun:    dryRun,
 	})
+	return nil
 }
 
 // Commit executes all staged write operations sequentially. If any step fails, an atomic rollback is performed.
-func (t *TransactionalBuffer) Commit(ctx context.Context) error {
+func (t *UOWWriter) Commit(ctx context.Context) error {
 	for _, bf := range t.pending {
 		if err := t.baseWriter.WriteFile(ctx, bf.path, bf.content, bf.overwrite, bf.dryRun); err != nil {
 			t.Rollback()
@@ -149,10 +156,35 @@ func (t *TransactionalBuffer) Commit(ctx context.Context) error {
 }
 
 // Rollback iterates backwards over successfully written files and removes them to leave a clean git tree.
-func (t *TransactionalBuffer) Rollback() {
+func (t *UOWWriter) Rollback() {
 	for i := len(t.written) - 1; i >= 0; i-- {
 		_ = t.baseWriter.DeleteFile(t.written[i])
 	}
 	t.written = nil
 	t.pending = nil
+}
+
+// Exists delegates to the base writer.
+func (t *UOWWriter) Exists(path string) (bool, error) {
+	return t.baseWriter.Exists(path)
+}
+
+// ReadFile delegates to the base writer.
+func (t *UOWWriter) ReadFile(path string) ([]byte, error) {
+	return t.baseWriter.ReadFile(path)
+}
+
+// DeleteFile delegates to the base writer.
+func (t *UOWWriter) DeleteFile(path string) error {
+	return t.baseWriter.DeleteFile(path)
+}
+
+// MkdirAll delegates to the base writer.
+func (t *UOWWriter) MkdirAll(dirPath string) error {
+	return t.baseWriter.MkdirAll(dirPath)
+}
+
+// BeginTransaction returns the current UOW instance (no nested transactions).
+func (t *UOWWriter) BeginTransaction() port.TransactionalWriter {
+	return t
 }

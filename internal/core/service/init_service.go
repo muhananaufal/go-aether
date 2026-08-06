@@ -13,7 +13,7 @@ import (
 // InitProject bootstraps a new greenfield project architecture and saves the SSOT manifest.
 func (s *AetherScaffoldService) InitProject(ctx context.Context, destDir, projectName, moduleName, arch, dbDriver, router string, dryRun bool) error {
 	manifest := domain.NewDefaultManifest(projectName, moduleName, "1.23", arch, dbDriver, router)
-	
+
 	if err := manifest.Validate(); err != nil {
 		return fmt.Errorf("invalid default manifest parameters: %w", err)
 	}
@@ -60,7 +60,7 @@ func (s *AetherScaffoldService) AdoptProject(ctx context.Context, destDir string
 					Title("What is the Go module name?").
 					Description("e.g. github.com/user/project").
 					Value(&moduleName),
-				
+
 				huh.NewInput().
 					Title("What is the Go version?").
 					Description("e.g. 1.23").
@@ -76,7 +76,7 @@ func (s *AetherScaffoldService) AdoptProject(ctx context.Context, destDir string
 						huh.NewOption("Unknown / Legacy Anomaly", "anomaly"),
 					).
 					Value(&arch),
-				
+
 				huh.NewSelect[string]().
 					Title("Primary HTTP Router").
 					Options(
@@ -87,7 +87,7 @@ func (s *AetherScaffoldService) AdoptProject(ctx context.Context, destDir string
 						huh.NewOption("standard net/http", "stdlib"),
 					).
 					Value(&router),
-					
+
 				huh.NewSelect[string]().
 					Title("Primary Database").
 					Options(

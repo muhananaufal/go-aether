@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/muhananaufal/go-aether/internal/adapter/cli/prompt"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -116,9 +117,29 @@ func newCmdAPIMiddleware(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	cmd := &cobra.Command{
 		Use:   "api:middleware [middleware-type]",
 		Short: "Inject a middleware (e.g. jwt-auth, rate-limit) into a module's transport handler",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			mwType := args[0]
+			var mwType string
+			if len(args) > 0 {
+				mwType = args[0]
+			} else if prompt.IsInteractive() {
+				var err error
+				mwType, err = prompt.AskString("Middleware Type", "e.g. jwt-auth, rate-limit", true)
+				if err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("accepts 1 arg(s), received 0. (interactive prompt unavailable in CI)")
+			}
+
+			if !cmd.Flags().Changed("module") && prompt.IsInteractive() {
+				mod, err := prompt.AskString("Target Module", "Module name to inject middleware into (e.g. users)", true)
+				if err != nil {
+					return err
+				}
+				module = mod
+			}
+
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
@@ -126,6 +147,10 @@ func newCmdAPIMiddleware(svc port.ScaffoldService, globals *globalFlags) *cobra.
 
 			if module == "" {
 				return fmt.Errorf("--module flag is required to target a specific module's handler")
+			}
+
+			if globals.DryRun {
+				prompt.PrintDryRunDiff(fmt.Sprintf("Inject middleware %s into module %s", mwType, module))
 			}
 
 			err = svc.AddMiddleware(cmd.Context(), cwd, module, mwType, globals.DryRun, force)
@@ -140,7 +165,6 @@ func newCmdAPIMiddleware(svc port.ScaffoldService, globals *globalFlags) *cobra.
 
 	cmd.Flags().StringVarP(&module, "module", "m", "", "Target module name to inject middleware into")
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing middleware package file")
-	cmd.MarkFlagRequired("module")
 
 	return cmd
 }

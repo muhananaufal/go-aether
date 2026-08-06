@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os/exec"
 )
 
 // RunDoctor performs structural health diagnostics and configuration checks against aether.yaml.
@@ -35,6 +36,23 @@ func (s *AetherScaffoldService) RunDoctor(ctx context.Context, startDir string, 
 		_, _ = fmt.Fprintf(out, "⚠️ [NOTE] Anomaly mode active for legacy brownfield structure.\n")
 	}
 
-	_, _ = fmt.Fprintf(out, "✨ Doctor check complete. Project structure is sound.\n")
+	_, _ = fmt.Fprintf(out, "\n🔍 Environment Dependencies Check:\n")
+
+	dependencies := []string{"go", "sqlc", "mockgen", "docker"}
+	allDepsMet := true
+	for _, dep := range dependencies {
+		if path, err := exec.LookPath(dep); err == nil {
+			_, _ = fmt.Fprintf(out, "   ✅ %-10s found at %s\n", dep, path)
+		} else {
+			_, _ = fmt.Fprintf(out, "   ❌ %-10s NOT FOUND in PATH\n", dep)
+			allDepsMet = false
+		}
+	}
+
+	if !allDepsMet {
+		_, _ = fmt.Fprintf(out, "\n⚠️ Warning: Some external dependencies are missing. Some generator features might not work.\n")
+	}
+
+	_, _ = fmt.Fprintf(out, "\n✨ Doctor check complete. Project structure is sound.\n")
 	return nil
 }
