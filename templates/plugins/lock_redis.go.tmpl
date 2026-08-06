@@ -1,0 +1,75 @@
+package lock
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+)
+
+var (
+	// ErrLockNotAcquired is returned when mutex acquisition times out.
+	ErrLockNotAcquired = errors.New("lock: failed to acquire distributed lock")
+	// ErrLockNotHeld is returned when attempting to release a lock owned by another instance.
+	ErrLockNotHeld = errors.New("lock: lock not held or token mismatch")
+)
+
+// DistributedMutex provides mutual exclusion across distributed microservices.
+type DistributedMutex struct {
+	client *redis.Client
+	key    string
+	value  string
+	expiry time.Duration
+}
+
+// NewDistributedMutex constructs a distributed lock instance.
+func NewDistributedMutex(client *redis.Client, resourceName string, ttl time.Duration) (*DistributedMutex, error) {
+	token := make([]byte, 16)
+	if _, err := rand.Read(token); err != nil {
+		return nil, fmt.Errorf("failed to generate random token: %w", err)
+	}
+
+	return &DistributedMutex{
+		client: client,
+		key:    fmt.Sprintf("lock:%s", resourceName),
+		value:  hex.EncodeToString(token),
+		expiry: ttl,
+	}, nil
+}
+
+// Lock attempts to acquire the lock with atomic SETNX.
+func (m *DistributedMutex) Lock(ctx context.Context) error {
+	acquired, err := m.client.SetNX(ctx, m.key, m.value, m.expiry).Result()
+	if err != nil {
+		return fmt.Errorf("lock error: %w", err)
+	}
+	if !acquired {
+		return ErrLockNotAcquired
+	}
+	return nil
+}
+
+// Unlock releases the lock atomically via a Lua script to prevent releasing another client's lock.
+func (m *DistributedMutex) Unlock(ctx context.Context) error {
+	luaRelease := `
+		if redis.call("get", KEYS[1]) == ARGV[1] then
+			return redis.call("del", KEYS[1])
+		else
+			return 0
+		end
+	`
+	res, err := m.client.Eval(ctx, luaRelease, []string{m.key}, m.value).Result()
+	if err != nil {
+		return fmt.Errorf("failed to execute release lua script: %w", err)
+	}
+
+	if count, ok := res.(int64); !ok || count == 0 {
+		return ErrLockNotHeld
+	}
+
+	return nil
+}

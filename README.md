@@ -90,33 +90,40 @@ go-aether doctor
 
 ---
 
-## 🗺️ Complete CLI Command Taxonomy (v0.8.0)
+## 🗺️ Complete CLI Command Taxonomy (v0.8.1)
 
-### 🔨 Core Generators (`make:*` & `init`)
+### 🔨 Core Generators & Inspectors (`make:*`, `init`, `ls`)
 | Command | Description | Example |
 | :--- | :--- | :--- |
+| `ls` | List active domain modules & installed plugins | `go-aether ls` |
 | `init [name]` | Initialize project layout & `aether.yaml` | `go-aether init e-commerce` |
 | `make:module [name]` | Scaffold complete vertical domain slice | `go-aether make:module payment` |
-| `make:repository [name]` | Scaffold standalone persistence repository | `go-aether make:repository order` |
+| `make:service [name]` | Scaffold standalone business use-case service | `go-aether make:service order` |
+| `make:handler [name]` | Scaffold HTTP / gRPC transport handler | `go-aether make:handler user` |
 | `make:domain [name]` | Scaffold pure domain entity & value objects | `go-aether make:domain user` |
+| `make:port [name]` | Scaffold interface contracts (Inbound/Outbound) | `go-aether make:port invoice` |
+| `make:repository [name]` | Scaffold standalone persistence repository | `go-aether make:repository order` |
 | `make:migration [name]` | Generate SQL migration pair (Goose / Golang-Migrate) | `go-aether make:migration add_users` |
 | `make:seeder [name]` | Generate database dummy data seeder | `go-aether make:seeder initial_users` |
 
-### ⚡ Distributed Patterns & Infrastructure (`add:*`)
+### ⚡ Distributed Patterns, Locks & Secrets (`add:*`)
 | Command | Description | Example |
 | :--- | :--- | :--- |
 | `add:cqrs [module]` | In-module Command & Query Handlers + Bus | `go-aether add:cqrs order` |
 | `add:outbox` | Transactional Outbox engine & SQL migration | `go-aether add:outbox` |
 | `add:saga [workflow]` | Distributed Saga orchestrator & rollback | `go-aether add:saga checkout` |
 | `add:webhook` | HMAC-SHA256 signed webhook engine | `go-aether add:webhook` |
+| `add:lock [provider]` | Distributed mutex lock engine (Redlock) | `go-aether add:lock redis` |
+| `add:secrets [provider]` | Secrets manager client (Vault / AWS) | `go-aether add:secrets vault` |
 | `add:discovery [provider]` | Service discovery client (Consul / etcd) | `go-aether add:discovery consul` |
 | `add:cache [provider]` | High-performance caching layer (Redis / Valkey) | `go-aether add:cache redis` |
 | `add:worker [provider]` | Asynchronous task queue (Asynq / River) | `go-aether add:worker asynq` |
 | `add:eventing [provider]` | Event streaming broker (Kafka / RabbitMQ) | `go-aether add:eventing kafka` |
 
-### ☁️ Cloud, Auth, Diagnostics & Plugins
+### ☁️ Cloud, Auth, Health & Observability
 | Command | Description | Example |
 | :--- | :--- | :--- |
+| `add:healthcheck` | K8s `/livez` & `/readyz` probe handlers | `go-aether add:healthcheck` |
 | `add:auth [type]` | Authentication provider (OAuth2 / API Key) | `go-aether add:auth oauth2` |
 | `add:storage [provider]` | Cloud blob storage abstraction (S3 / GCS / Local) | `go-aether add:storage s3` |
 | `add:cron [job-name]` | In-process recurring job scheduler | `go-aether add:cron report_job` |

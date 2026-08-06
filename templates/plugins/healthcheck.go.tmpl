@@ -1,0 +1,85 @@
+package health
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"sync"
+	"time"
+)
+
+// CheckerFunc defines a function returning an error if a dependency is unhealthy.
+type CheckerFunc func(ctx context.Context) error
+
+// HealthStatus represents structured probe output.
+type HealthStatus struct {
+	Status    string            `json:"status"`
+	Timestamp string            `json:"timestamp"`
+	Checks    map[string]string `json:"checks,omitempty"`
+}
+
+// HealthHandler manages liveness and readiness probe checks.
+type HealthHandler struct {
+	mu       sync.RWMutex
+	checkers map[string]CheckerFunc
+}
+
+// NewHealthHandler constructs a new HealthHandler.
+func NewHealthHandler() *HealthHandler {
+	return &HealthHandler{
+		checkers: make(map[string]CheckerFunc),
+	}
+}
+
+// RegisterChecker registers a dependency checker (e.g. database, redis).
+func (h *HealthHandler) RegisterChecker(name string, fn CheckerFunc) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.checkers[name] = fn
+}
+
+// Livez handles Kubernetes Liveness Probes.
+func (h *HealthHandler) Livez(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	_ = json.NewEncoder(w).Encode(HealthStatus{
+		Status:    "UP",
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+// Readyz handles Kubernetes Readiness Probes by verifying all registered dependencies.
+func (h *HealthHandler) Readyz(w http.ResponseWriter, r *http.Request) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+	defer cancel()
+
+	checks := make(map[string]string)
+	allHealthy := true
+
+	for name, fn := range h.checkers {
+		if err := fn(ctx); err != nil {
+			checks[name] = err.Error()
+			allHealthy = false
+		} else {
+			checks[name] = "OK"
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	status := "UP"
+	if !allHealthy {
+		status = "DEGRADED"
+		w.WriteHeader(http.StatusServiceUnavailable)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+
+	_ = json.NewEncoder(w).Encode(HealthStatus{
+		Status:    status,
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+		Checks:    checks,
+	})
+}

@@ -724,3 +724,81 @@ func newAddLoggerCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing logger files")
 	return cmd
 }
+
+func newAddHealthcheckCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:healthcheck",
+		Short: "Set up Kubernetes Liveness (/livez) and Readiness (/readyz) probe handlers",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddHealthcheck(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("🩺 Injected Kubernetes /livez and /readyz probe handlers")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing healthcheck files")
+	return cmd
+}
+
+func newAddSecretsCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:secrets [vault|aws]",
+		Short: "Set up secret manager client (vault, aws)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddSecrets(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🔐 Injected [%s] secrets manager client\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing secrets files")
+	return cmd
+}
+
+func newAddLockCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:lock [redis]",
+		Short: "Set up distributed lock (Redlock) engine",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddLock(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🔒 Injected [%s] distributed mutex lock engine\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing lock files")
+	return cmd
+}
