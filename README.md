@@ -96,6 +96,27 @@ go-aether doctor
 
 ---
 
+## 🚩 Important Command Flags
+
+While `go-aether` has many commands, most core scaffolding commands share a common set of flags.
+
+### Project Initialization (`init`)
+- `--module` : Go module identifier for `go.mod` (default: `github.com/example/app`).
+- `--arch` : Architecture blueprint (options: `hexagonal`, `clean`, `ddd`; default: `hexagonal`).
+- `--db` : Database engine driver (options: `postgres`, `mysql`, `sqlite`; default: `postgres`).
+- `--router` : HTTP routing framework (options: `chi`, `gin`, `echo`; default: `chi`).
+
+### Module Scaffolding (`arch:module`)
+- `--transports` : Comma-separated transport targets (e.g., `http,grpc,nats`; default: `http`).
+- `--cache` : Inject L1/L2 Redis caching decorators into the repository layer.
+- `--worker` : Scaffold async worker job processor for domain events.
+
+### Global Flags (Available on all commands)
+- `--dry-run` : Simulate generation and print to stdout without writing to disk.
+- `--force` or `-f` : Force overwrite existing generated files.
+
+---
+
 ## 🗺️ Complete Command Reference (v0.9.0 — 90 Commands)
 
 ### ⚙️ Core Lifecycle

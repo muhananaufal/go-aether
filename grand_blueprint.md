@@ -64,70 +64,117 @@ go-aether init payment-service --arch hexagonal --db postgres --router chi
 # Brownfield: Adopsi proyek legacy
 go-aether adopt --scan
 
-# Generate komponen (make:*)
-go-aether make:module order
-go-aether make:module payment --pattern cqrs
-go-aether make:module shipment --pattern outbox
-go-aether make:service invoice
-go-aether make:handler user --transport grpc --stream server
-go-aether make:repository product --cache redis
-go-aether make:migration add_orders_table
+# Generate komponen arsitektur (arch:*)
+go-aether arch:module order
+go-aether arch:module payment
+go-aether arch:service invoice
+go-aether arch:handler user --transport grpc
+go-aether arch:repository product
+go-aether arch:aggregate order
+go-aether arch:event order_paid
+go-aether arch:valueobject email
+go-aether arch:command create_order
+go-aether arch:query get_order
 
-# Tambah kapabilitas (add:*)
-go-aether add:middleware jwt-auth
-go-aether add:middleware rate-limit
-go-aether add:middleware bulkhead
-go-aether add:middleware idempotency
-go-aether add:middleware audit-log
-go-aether add:transport grpc
-go-aether add:transport graphql
-go-aether add:transport mqtt
-go-aether add:transport connect-rpc
-go-aether add:worker email-sender --broker redis --pattern asynq
-go-aether add:worker invoice-generator --broker kafka --pattern watermill
-go-aether add:cron daily-report
-go-aether add:workflow payment-saga --engine temporal
-go-aether add:config
-go-aether add:di wire
-go-aether add:eventing
-go-aether add:tracing
-go-aether add:profiling
-go-aether add:metrics prometheus
-go-aether add:healthcheck
-go-aether add:versioning
-go-aether add:webhook
-go-aether add:feature-flags
-go-aether add:db read-replica
-go-aether add:db pgvector
-go-aether add:cache l2
-go-aether add:auth argon2
-go-aether add:authz casbin
-go-aether add:crypto aes-gcm
-go-aether add:security mtls
-go-aether add:secrets vault
-go-aether add:lock redis
-go-aether add:discovery etcd
-go-aether add:cloud aws
-go-aether add:cloud gcp
-go-aether add:storage s3
-go-aether add:deploy k8s
-go-aether add:deploy lambda
-go-aether add:deploy helm
-go-aether add:multitenancy --strategy rls
-go-aether add:ai embedding
-go-aether add:ai llm-proxy
-go-aether add:test e2e
-go-aether add:test fuzz
-go-aether add:test property
-go-aether add:test synctest
-go-aether add:validation
-go-aether add:lint custom
-go-aether add:middleware cdn-cache
+# Database & persistence (db:*)
+go-aether db:migration add_orders_table
+go-aether db:seeder initial_users
+go-aether db:sqlc
+go-aether db:uow
+go-aether db:readreplica
+go-aether db:paginator
+
+# API Layer (api:*)
+go-aether api:middleware jwt-auth
+go-aether api:transport grpc
+go-aether api:graphql
+go-aether api:grpc
+go-aether api:grpc-gateway
+go-aether api:openapi
+go-aether api:validator playground
+go-aether api:idempotency redis
+
+# Async & events (async:*)
+go-aether async:worker email-sender --broker redis --pattern asynq
+go-aether async:cron daily-report
+go-aether async:outbox
+go-aether async:saga checkout
+go-aether async:eventing
+go-aether async:webhook
+
+# Security & zero-trust (security:*)
+go-aether security:auth oauth2
+go-aether security:authz casbin
+go-aether security:argon2
+go-aether security:crypto aes-gcm
+go-aether security:secrets vault
+go-aether security:oauth2 google
+go-aether security:auditlog
+
+# Caching (cache:*)
+go-aether cache:redis redis
+go-aether cache:multilevel
+go-aether cache:bloom
+go-aether cache:dedup
+
+# Observability (o11y:*)
+go-aether o11y:tracing otel
+go-aether o11y:metrics prometheus
+go-aether o11y:logger slog
+
+# Infrastructure (infra:*)
+go-aether infra:cicd github
+go-aether infra:deploy k8s
+go-aether infra:healthcheck
+go-aether infra:drain
+go-aether infra:profiling pprof
+go-aether infra:lint
+go-aether infra:featureflags flipt
+go-aether infra:config viper
+go-aether infra:search meilisearch
+
+# Realtime (realtime:*)
+go-aether realtime:ws gorilla
+go-aether realtime:sse
+go-aether realtime:webrtc pion
+go-aether realtime:mqtt paho
+
+# Fintech (fintech:*)
+go-aether fintech:ledger
+go-aether fintech:decimal
+go-aether fintech:reconcile
+go-aether fintech:pricing
+
+# Notifikasi (notif:*)
+go-aether notif:mail smtp
+go-aether notif:push
+go-aether notif:sms
+
+# Cloud storage (cloud:*)
+go-aether cloud:s3 minio
+go-aether cloud:storage gcs
+
+# Platform distributed (platform:*)
+go-aether platform:cqrs order
+go-aether platform:discovery consul
+go-aether platform:lock redis
+go-aether platform:resilience resilience4go
+go-aether platform:multitenancy customer
+go-aether platform:tenant
+go-aether platform:ai openai
+
+# QA & Testing (test:*)
+go-aether test:stress
+go-aether test:chaos
+go-aether test:fuzz
+go-aether test:benchmark
+go-aether test:container
+go-aether test:mutation
+go-aether test:integration
 
 # Utilitas
 go-aether doctor           # Validasi konsistensi aether.yaml
 go-aether ls               # List semua modul yang sudah di-generate
-go-aether upgrade          # Update aether.yaml ke versi spec terbaru
 ```
 
 ---
@@ -137,10 +184,10 @@ go-aether upgrade          # Update aether.yaml ke versi spec terbaru
 | Skenario | Command |
 |:---|:---|
 | Hari pertama proyek baru | `go-aether init` |
-| Memulai fitur baru (user story baru) | `go-aether make:module` |
-| Butuh tambah lapisan transport (gRPC, WS) | `go-aether add:transport` |
+| Memulai fitur baru (user story baru) | `go-aether arch:module` |
+| Butuh tambah lapisan transport (gRPC, WS) | `go-aether api:transport` |
 | Bergabung ke proyek legacy baru | `go-aether adopt` |
-| Butuh tambah worker/consumer event | `go-aether add:worker` |
+| Butuh tambah worker/consumer event | `go-aether async:worker` |
 | Setiap kali curiga ada inkonsistensi | `go-aether doctor` |
 
 ---
@@ -459,12 +506,12 @@ Flags:
 
 ---
 
-### 4.3 `go-aether make:module`
+### 4.3 `go-aether arch:module`
 
 **Fungsi:** Generate satu modul lengkap (domain + port + service + handler + repository) dalam satu perintah.
 
 ```bash
-go-aether make:module <name> [flags]
+go-aether arch:module <name> [flags]
 
 Flags:
   --transport  string   http|grpc|both [default: http]
@@ -475,7 +522,7 @@ Flags:
   --dry-run
 ```
 
-**Contoh Output (hexagonal, `go-aether make:module order`):**
+**Contoh Output (hexagonal, `go-aether arch:module order`):**
 ```
 internal/core/domain/order.go                           ← Entity + Value Objects + Errors
 internal/core/port/order_service_port.go                ← Interface IOrderService
@@ -488,23 +535,23 @@ internal/core/service/order_service_test.go             ← Table-driven test sk
 
 ---
 
-### 4.4 `go-aether make:service`
+### 4.4 `go-aether arch:service`
 
 **Fungsi:** Generate service layer saja (tanpa handler & repository), siap diinject via constructor.
 
 ```bash
-go-aether make:service <name> [flags]
+go-aether arch:service <name> [flags]
   --no-test    Skip generate test file
 ```
 
 ---
 
-### 4.5 `go-aether make:handler`
+### 4.5 `go-aether arch:handler`
 
 **Fungsi:** Generate transport handler saja untuk antarmuka tertentu.
 
 ```bash
-go-aether make:handler <name> [flags]
+go-aether arch:handler <name> [flags]
   --transport  string  http|grpc [default: sesuai aether.yaml]
   --methods    string  GET,POST,PUT,DELETE,PATCH (kombinasi bebas)
   --stream     string  server|client|bidi (khusus gRPC streaming)
@@ -512,26 +559,26 @@ go-aether make:handler <name> [flags]
 
 ---
 
-### 4.6 `go-aether make:repository`
+### 4.6 `go-aether arch:repository`
 
 **Fungsi:** Generate repository layer saja yang terhubung ke database driver tertentu.
 
 ```bash
-go-aether make:repository <name> [flags]
+go-aether arch:repository <name> [flags]
   --db     string  postgres|mysql|sqlite|mongodb|timescaledb|badger [default: sesuai aether.yaml]
   --cache          Tambahkan cache layer
 ```
 
 ---
 
-### 4.7 `go-aether make:migration`
+### 4.7 `go-aether db:migration`
 
 **Fungsi:** Generate file SQL migrasi kosongan sesuai alat migrasi (goose, migrate, atlas).
 
 ```bash
-go-aether make:migration <name> [flags]
+go-aether db:migration <name> [flags]
   --tool   string  goose|migrate|atlas [default: sesuai aether.yaml]
-# Contoh: go-aether make:migration add_orders_table
+# Contoh: go-aether db:migration add_orders_table
 # → migrations/20260806192000_add_orders_table.sql
 ```
 
@@ -662,10 +709,10 @@ go-aether add:db <type>
 
 ---
 
-### 4.16 `go-aether add:cache`
+### 4.16 `go-aether cache:redis`
 
 ```bash
-go-aether add:cache <type>
+go-aether cache:redis <type>
   l2     Multilevel cache (in-memory L1 + Redis L2 + singleflight)
   cdn    HTTP CDN Cache-Control header policies
 ```
@@ -949,10 +996,10 @@ go-aether add:validation <type>
 
 ---
 
-### 4.42 `go-aether add:lint`
+### 4.42 `go-aether infra:lint`
 
 ```bash
-go-aether add:lint <type>
+go-aether infra:lint <type>
   custom    Custom linter menggunakan go/analysis framework
 ```
 
@@ -1130,7 +1177,7 @@ func New{{.ModuleNameTitle}}Service(
 
 ### 6.1 aether.yaml Tidak Ditemukan
 
-**Skenario:** User menjalankan `go-aether make:service order` di dalam subdirektori proyek.
+**Skenario:** User menjalankan `go-aether arch:service order` di dalam subdirektori proyek.
 
 **Solusi:** CLI berjalan dengan algoritma `walk-up` — mencari `aether.yaml` mulai dari direktori saat ini ke atas hingga root filesystem atau batas git repo (`.git/` ditemukan):
 
@@ -1155,7 +1202,7 @@ Run `go-aether adopt` to use go-aether with an existing project.
 
 ### 6.2 File Tujuan Sudah Ada (Conflict)
 
-**Skenario:** User menjalankan `go-aether make:module order` padahal `order.go` sudah ada dari generate sebelumnya.
+**Skenario:** User menjalankan `go-aether arch:module order` padahal `order.go` sudah ada dari generate sebelumnya.
 
 **Solusi (3 Mode):**
 
@@ -1177,7 +1224,7 @@ Jika flag `--dry-run` diberikan: tampilkan diff, tidak ada perubahan.
 
 ### 6.3 Nama Modul Tidak Valid (Go Identifier)
 
-**Skenario:** `go-aether make:module my-order` (mengandung tanda hubung).
+**Skenario:** `go-aether arch:module my-order` (mengandung tanda hubung).
 
 **Solusi:**
 ```
@@ -1185,16 +1232,16 @@ ERROR: "my-order" is not a valid Go package name.
 Go identifiers cannot contain hyphens.
 
 Suggestions:
-  → go-aether make:module myorder
-  → go-aether make:module my_order
-  → go-aether make:module MyOrder
+  → go-aether arch:module myorder
+  → go-aether arch:module my_order
+  → go-aether arch:module MyOrder
 ```
 
 ---
 
 ### 6.4 Nama Modul Duplikat
 
-**Skenario:** `aether.yaml` sudah punya modul `order`, tapi user coba `go-aether make:module order` lagi.
+**Skenario:** `aether.yaml` sudah punya modul `order`, tapi user coba `go-aether arch:module order` lagi.
 
 **Solusi:**
 ```
@@ -1206,7 +1253,7 @@ Existing files:
   ...
 
 If you want to regenerate, use: --force
-If you want to add a transport, use: go-aether make:handler order --transport grpc
+If you want to add a transport, use: go-aether arch:handler order --transport grpc
 ```
 
 ---
@@ -1266,13 +1313,13 @@ meta:
   legacy_notes: "Non-standard folder structure from pre-2020 rewrite"
 ```
 
-Saat `go-aether make:module order` dijalankan di proyek ini, file akan diletakkan di `web/controllers/order_handler.go`, `logic/order_service.go`, `data/order_repository.go` — **menghormati konvensi lama, tidak menciptakan gaya baru!**
+Saat `go-aether arch:module order` dijalankan di proyek ini, file akan diletakkan di `web/controllers/order_handler.go`, `logic/order_service.go`, `data/order_repository.go` — **menghormati konvensi lama, tidak menciptakan gaya baru!**
 
 ---
 
 ### 6.7 Arsitektur Mismatch
 
-**Skenario:** aether.yaml menyatakan `pattern: hexagonal`, tapi user mencoba `go-aether make:handler order --style mvc`.
+**Skenario:** aether.yaml menyatakan `pattern: hexagonal`, tapi user mencoba `go-aether arch:handler order --style mvc`.
 
 **Solusi:**
 ```
@@ -1356,14 +1403,14 @@ Or disable auto-format: go-aether config set autoformat false
 
 ### 6.12 Nama Modul Collision dengan Standard Library
 
-**Skenario:** `go-aether make:module context`
+**Skenario:** `go-aether arch:module context`
 
 **Solusi:**
 ```
 ERROR: "context" conflicts with Go standard library package name.
 Choose a different module name:
-  → go-aether make:module appcontext
-  → go-aether make:module requestcontext
+  → go-aether arch:module appcontext
+  → go-aether arch:module requestcontext
 ```
 
 Daftar kata reserved yang diblokir mencakup semua stdlib package name.
@@ -1437,7 +1484,7 @@ Tidak ada pemetaan path, tidak ada konflik, 100% terisolasi.
 func TestMakeModule_Hexagonal_WritesCorrectFiles(t *testing.T) {
     fs := afero.NewMemMapFs()
     // Setup aether.yaml di in-memory filesystem
-    // Jalankan make:module service
+    // Jalankan arch:module service
     // Assert file yang dihasilkan ada dan isinya benar
     // TANPA menyentuh disk nyata
 }
@@ -1520,7 +1567,7 @@ Ikuti Semantic Versioning (SemVer):
 
 **Scope ketat — hanya yang benar-benar dibutuhkan:**
 - [ ] `go-aether init` dengan `--arch hexagonal` dan `--db postgres` + `--router chi`
-- [ ] `go-aether make:module` (domain + port + service + handler + repository)
+- [ ] `go-aether arch:module` (domain + port + service + handler + repository)
 - [ ] `aether.yaml` schema v1 (greenfield only)
 - [ ] `go-aether doctor` (validasi basic)
 - [ ] Template: hexagonal only, postgres only, chi only
@@ -1534,7 +1581,7 @@ Ikuti Semantic Versioning (SemVer):
 
 - [ ] `go-aether adopt --scan` (brownfield dengan kuesioner interaktif)
 - [ ] `go-aether add:middleware` (jwt-auth, rate-limit, cors, otel-trace)
-- [ ] `go-aether make:module` tambahan transport `--transport grpc`
+- [ ] `go-aether arch:module` tambahan transport `--transport grpc`
 - [ ] Template tambahan: `clean` architecture
 - [ ] Tambah router: `gin` dan `echo`
 
