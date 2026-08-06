@@ -1851,3 +1851,133 @@ func (s *AetherScaffoldService) AddArgon2(ctx context.Context, startDir string, 
 
 	return tx.Commit(ctx)
 }
+
+// AddLint scaffolds linter rules (golangci-lint) and git pre-commit hooks.
+func (s *AetherScaffoldService) AddLint(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("lint", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+
+	content, err := s.engine.Render(ctx, "plugins/lint.yml.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(projectRoot, ".golangci.yml"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddUOW scaffolds Unit of Work transactional orchestrator pattern.
+func (s *AetherScaffoldService) AddUOW(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("uow", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Port)
+
+	content, err := s.engine.Render(ctx, "plugins/uow.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "uow.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddGraphQL scaffolds gqlgen GraphQL server with dataloader boilerplate.
+func (s *AetherScaffoldService) AddGraphQL(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("graphql", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	handlerDir := filepath.Dir(manifest.Architecture.Paths.HandlerHTTP)
+	destDir := filepath.Join(projectRoot, handlerDir, "graphql")
+
+	content, err := s.engine.Render(ctx, "plugins/graphql.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "server.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddReadReplica scaffolds DB connection pool splitter for Primary-Write and Replica-Read.
+func (s *AetherScaffoldService) AddReadReplica(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("readreplica", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	
+	pkgDir := manifest.Architecture.Paths.Pkg
+	if pkgDir == "" {
+		pkgDir = "pkg"
+	}
+	destDir := filepath.Join(projectRoot, pkgDir, "database")
+
+	content, err := s.engine.Render(ctx, "plugins/readreplica.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "replica.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddOpenAPI scaffolds Swagger OpenAPI docs generator middleware.
+func (s *AetherScaffoldService) AddOpenAPI(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("openapi", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.HandlerHTTP)
+
+	content, err := s.engine.Render(ctx, "plugins/openapi.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "swagger.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

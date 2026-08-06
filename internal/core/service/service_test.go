@@ -306,3 +306,54 @@ func TestAetherScaffoldService_Phase15_Concurrency_ZeroTrust(t *testing.T) {
 		})
 	}
 }
+
+func TestAetherScaffoldService_Phase16_FinalGap(t *testing.T) {
+	memFS := afero.NewMemMapFs()
+	w := writer.NewAferoWriter(memFS)
+	resolver := manifest.NewYamlResolver(w)
+
+	mockEmbed := fstest.MapFS{
+		"common/aether_yaml.tmpl":              &fstest.MapFile{Data: []byte("version: \"1\"\narchitecture:\n  paths:\n    domain: internal/core/domain\n    port: internal/core/port\n    service: internal/core/service\n    handler_http: internal/adapter/handler/http\n    repository: internal/adapter/repository\n    cmd: cmd/server\n    pkg: pkg")},
+		"plugins/lint.yml.tmpl":                &fstest.MapFile{Data: []byte("lint")},
+		"plugins/uow.go.tmpl":                  &fstest.MapFile{Data: []byte("package uow")},
+		"plugins/graphql.go.tmpl":              &fstest.MapFile{Data: []byte("package graphql")},
+		"plugins/readreplica.go.tmpl":          &fstest.MapFile{Data: []byte("package database")},
+		"plugins/openapi.go.tmpl":              &fstest.MapFile{Data: []byte("package http")},
+		"plugins/cursor_paginator.go.tmpl":     &fstest.MapFile{Data: []byte("package pagination")},
+	}
+
+	engine := template.NewStdEngine(mockEmbed)
+	svc := service.NewAetherScaffoldService(engine, resolver, w)
+	ctx := context.Background()
+	projectDir := "/projects/final-gap-app"
+	_ = w.MkdirAll(projectDir)
+
+	if err := svc.InitProject(ctx, projectDir, "final-gap-app", "github.com/final/gap/app", "hexagonal", "postgres", "chi", false); err != nil {
+		t.Fatalf("InitProject failed: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		action   func() error
+		expected string
+	}{
+		{"AddLint", func() error { return svc.AddLint(ctx, projectDir, false, false) }, "/projects/final-gap-app/.golangci.yml"},
+		{"AddUOW", func() error { return svc.AddUOW(ctx, projectDir, false, false) }, "/projects/final-gap-app/internal/core/port/uow.go"},
+		{"AddGraphQL", func() error { return svc.AddGraphQL(ctx, projectDir, false, false) }, "/projects/final-gap-app/internal/adapter/handler/graphql/server.go"},
+		{"AddReadReplica", func() error { return svc.AddReadReplica(ctx, projectDir, false, false) }, "/projects/final-gap-app/pkg/database/replica.go"},
+		{"AddOpenAPI", func() error { return svc.AddOpenAPI(ctx, projectDir, false, false) }, "/projects/final-gap-app/internal/adapter/handler/http/swagger.go"},
+		{"MakeCursorPaginator", func() error { return svc.MakeCursorPaginator(ctx, projectDir, false, false) }, "/projects/final-gap-app/pkg/pagination/cursor.go"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.action(); err != nil {
+				t.Fatalf("%s failed: %v", tt.name, err)
+			}
+			exists, _ := w.Exists(tt.expected)
+			if !exists {
+				t.Errorf("expected %s to exist", tt.expected)
+			}
+		})
+	}
+}

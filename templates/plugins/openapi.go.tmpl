@@ -1,0 +1,22 @@
+package http
+
+import (
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	httpSwagger "github.com/swaggo/http-swagger"
+)
+
+// RegisterOpenAPIRoutes sets up the Swagger UI and OpenAPI JSON spec routes.
+// To generate the swagger.json, run: `swag init -g cmd/api/main.go`
+func RegisterOpenAPIRoutes(r chi.Router) {
+	// Serve the swagger.json file
+	r.Get("/swagger/doc.json", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "docs/swagger.json")
+	})
+
+	// Setup Swagger UI route
+	r.Get("/swagger/*", httpSwagger.Handler(
+		httpSwagger.URL("/swagger/doc.json"), // URL pointing to the API definition
+	))
+}

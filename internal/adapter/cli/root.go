@@ -112,5 +112,13 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAddAuditLogCommand(svc, &flags))
 	rootCmd.AddCommand(newAddArgon2Command(svc, &flags))
 
+	// v0.9.0 Final Gap commands
+	rootCmd.AddCommand(newAddLintCommand(svc, &flags))
+	rootCmd.AddCommand(newAddUOWCommand(svc, &flags))
+	rootCmd.AddCommand(newAddGraphQLCommand(svc, &flags))
+	rootCmd.AddCommand(newAddReadReplicaCommand(svc, &flags))
+	rootCmd.AddCommand(newAddOpenAPICommand(svc, &flags))
+	rootCmd.AddCommand(newMakeCursorPaginatorCommand(svc, &flags))
+
 	return rootCmd
 }

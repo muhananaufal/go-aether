@@ -1,0 +1,46 @@
+package database
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+)
+
+// DBManager handles primary and read-replica connections.
+type DBManager struct {
+	Primary *sql.DB
+	Replica *sql.DB
+}
+
+// NewDBManager initializes the DB manager with primary and replica connections.
+func NewDBManager(primary, replica *sql.DB) *DBManager {
+	return &DBManager{
+		Primary: primary,
+		Replica: replica, // Can be nil if no replica is available
+	}
+}
+
+// Write returns the primary database connection.
+func (m *DBManager) Write() *sql.DB {
+	return m.Primary
+}
+
+// Read returns the replica connection. It falls back to primary if replica is unavailable.
+func (m *DBManager) Read() *sql.DB {
+	if m.Replica != nil {
+		// Basic health check fallback could be added here
+		if err := m.Replica.PingContext(context.Background()); err == nil {
+			return m.Replica
+		}
+	}
+	// Fallback to primary
+	return m.Primary
+}
+
+// Tx represents a transaction that strictly uses the Primary connection.
+func (m *DBManager) BeginTx(ctx context.Context, opts *sql.TxOptions) (*sql.Tx, error) {
+	if m.Primary == nil {
+		return nil, errors.New("primary database is not initialized")
+	}
+	return m.Primary.BeginTx(ctx, opts)
+}

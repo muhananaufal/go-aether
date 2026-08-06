@@ -1,0 +1,61 @@
+package uow
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+)
+
+// UnitOfWork defines the contract for a transactional unit of work.
+type UnitOfWork interface {
+	Do(ctx context.Context, fn func(ctx context.Context) error) error
+}
+
+// SQLUnitOfWork implements UnitOfWork for database/sql.
+type SQLUnitOfWork struct {
+	db *sql.DB
+}
+
+// NewSQLUnitOfWork creates a new SQLUnitOfWork.
+func NewSQLUnitOfWork(db *sql.DB) *SQLUnitOfWork {
+	return &SQLUnitOfWork{
+		db: db,
+	}
+}
+
+type txKey struct{}
+
+// Do executes the given function within a transaction.
+func (u *SQLUnitOfWork) Do(ctx context.Context, fn func(ctx context.Context) error) error {
+	// If context already has a transaction, just reuse it (nested call).
+	if _, ok := ctx.Value(txKey{}).(*sql.Tx); ok {
+		return fn(ctx)
+	}
+
+	tx, err := u.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+
+	// Inject transaction into context.
+	ctxWithTx := context.WithValue(ctx, txKey{}, tx)
+
+	if err := fn(ctxWithTx); err != nil {
+		if rbErr := tx.Rollback(); rbErr != nil {
+			return fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
+		}
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+// ExtractTx extracts the *sql.Tx from the context, if any.
+func ExtractTx(ctx context.Context) (*sql.Tx, bool) {
+	tx, ok := ctx.Value(txKey{}).(*sql.Tx)
+	return tx, ok
+}

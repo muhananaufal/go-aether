@@ -294,4 +294,22 @@ type ScaffoldService interface {
 
 	// AddArgon2 scaffolds GPU-resistant Argon2id password security hasher.
 	AddArgon2(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddLint scaffolds linter rules (golangci-lint) and git pre-commit hooks.
+	AddLint(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddUOW scaffolds Unit of Work transactional orchestrator pattern.
+	AddUOW(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddGraphQL scaffolds gqlgen GraphQL server with dataloader boilerplate.
+	AddGraphQL(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddReadReplica scaffolds DB connection pool splitter for Primary-Write and Replica-Read.
+	AddReadReplica(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddOpenAPI scaffolds Swagger OpenAPI docs generator middleware.
+	AddOpenAPI(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// MakeCursorPaginator scaffolds cursor-based opaque base64 pagination helper.
+	MakeCursorPaginator(ctx context.Context, startDir string, dryRun, force bool) error
 }

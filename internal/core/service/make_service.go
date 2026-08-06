@@ -518,3 +518,33 @@ func (s *AetherScaffoldService) MakeQuery(ctx context.Context, startDir, name st
 
 	return tx.Commit(ctx)
 }
+
+// MakeCursorPaginator scaffolds cursor-based opaque base64 pagination helper.
+func (s *AetherScaffoldService) MakeCursorPaginator(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("cursor_paginator", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	
+	pkgDir := manifest.Architecture.Paths.Pkg
+	if pkgDir == "" {
+		pkgDir = "pkg"
+	}
+	destDir := filepath.Join(projectRoot, pkgDir, "pagination")
+
+	content, err := s.engine.Render(ctx, "plugins/cursor_paginator.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "cursor.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
