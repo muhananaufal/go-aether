@@ -72,4 +72,16 @@ type ScaffoldService interface {
 
 	// AddTransport registers a new global transport protocol.
 	AddTransport(ctx context.Context, startDir, transport string, dryRun, force bool) error
+
+	// AddWorker generates an asynchronous background processor in the worker directory.
+	AddWorker(ctx context.Context, startDir, workerName, broker, pattern string, dryRun, force bool) error
+
+	// AddEventing sets up the global Publisher and Subscriber interfaces for event-driven architecture.
+	AddEventing(ctx context.Context, startDir, broker string, dryRun, force bool) error
+
+	// AddMetrics sets up the Prometheus metrics middleware and endpoint.
+	AddMetrics(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddTracing sets up the OpenTelemetry tracing infrastructure.
+	AddTracing(ctx context.Context, startDir, exporter string, dryRun, force bool) error
 }

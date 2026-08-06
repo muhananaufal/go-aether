@@ -126,3 +126,122 @@ func (s *AetherScaffoldService) AddTransport(ctx context.Context, startDir, tran
 	}
 	return nil
 }
+
+// AddWorker generates an asynchronous background processor in the worker directory.
+func (s *AetherScaffoldService) AddWorker(ctx context.Context, startDir, workerName, broker, pattern string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(workerName, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tmplName := fmt.Sprintf("distributed/worker_%s.go.tmpl", pattern)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	found := false
+	for _, w := range manifest.Workers {
+		if w.Name == workerName {
+			found = true
+			break
+		}
+	}
+	if !found {
+		manifest.Workers = append(manifest.Workers, domain.WorkerRegistry{
+			Name:    workerName,
+			Broker:  broker,
+			Pattern: pattern,
+		})
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "worker", fmt.Sprintf("%s_worker.go", strings.ToLower(workerName)))
+	
+	tx.Stage(destFile, content, force, dryRun)
+	
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	if !dryRun {
+		return s.resolver.Save(ctx, manifestPath, manifest, s.fs)
+	}
+	return nil
+}
+
+// AddEventing sets up the global Publisher and Subscriber interfaces for event-driven architecture.
+func (s *AetherScaffoldService) AddEventing(ctx context.Context, startDir, broker string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, _ := domain.NewTemplateData("event", manifest, nil, false, false)
+	tmplName := "distributed/event_bus.go.tmpl"
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "event", "event_bus.go")
+	
+	tx.Stage(destFile, content, force, dryRun)
+	
+	return tx.Commit(ctx)
+}
+
+// AddMetrics sets up the Prometheus metrics middleware and endpoint.
+func (s *AetherScaffoldService) AddMetrics(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, _ := domain.NewTemplateData("middleware", manifest, nil, false, false)
+	
+	tmplName := "common/metrics_prometheus.go.tmpl"
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "middleware", "metrics_prometheus.go")
+	
+	tx.Stage(destFile, content, force, dryRun)
+	
+	return tx.Commit(ctx)
+}
+
+// AddTracing sets up the OpenTelemetry tracing infrastructure.
+func (s *AetherScaffoldService) AddTracing(ctx context.Context, startDir, exporter string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, _ := domain.NewTemplateData("telemetry", manifest, nil, false, false)
+	tmplName := "common/tracing_otel.go.tmpl"
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "telemetry", "tracing_otel.go")
+	
+	tx.Stage(destFile, content, force, dryRun)
+	
+	return tx.Commit(ctx)
+}

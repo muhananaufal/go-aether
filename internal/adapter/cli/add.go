@@ -94,3 +94,113 @@ func newAddTransportCommand(svc port.ScaffoldService, globals *globalFlags) *cob
 	}
 	return cmd
 }
+
+func newAddWorkerCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var broker, pattern string
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:worker [worker-name]",
+		Short: "Generate an asynchronous background processor",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			workerName := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddWorker(cmd.Context(), cwd, workerName, broker, pattern, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("⚙️ Injected [%s] background worker using pattern [%s]\n", workerName, pattern)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&broker, "broker", "redis", "Message broker engine (redis, kafka)")
+	cmd.Flags().StringVar(&pattern, "pattern", "asynq", "Worker library pattern (asynq, kafka)")
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing worker file")
+	return cmd
+}
+
+func newAddEventingCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var broker string
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:eventing",
+		Short: "Set up the global Publisher and Subscriber interfaces for event-driven architecture",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddEventing(cmd.Context(), cwd, broker, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("📨 Injected Event-Bus Publisher/Subscriber interfaces for [%s]\n", broker)
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&broker, "broker", "nats", "Message broker engine (nats, kafka, rabbitmq)")
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing event bus file")
+	return cmd
+}
+
+func newAddMetricsCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:metrics [provider]",
+		Short: "Set up the metrics middleware and endpoint (e.g. prometheus)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddMetrics(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("📊 Injected [%s] metrics middleware and endpoint\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing metrics file")
+	return cmd
+}
+
+func newAddTracingCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:tracing [exporter]",
+		Short: "Set up the OpenTelemetry tracing infrastructure (e.g. jaeger, stdout)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddTracing(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🔍 Injected OpenTelemetry tracing infrastructure for [%s]\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing tracing file")
+	return cmd
+}
