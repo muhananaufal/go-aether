@@ -1,0 +1,25 @@
+package cqrs
+
+import (
+	"context"
+)
+
+// Query defines a marker interface for all read-only operations.
+type Query interface {
+	QueryName() string
+}
+
+// QueryHandler processes a specific query and returns a typed result.
+type QueryHandler[Q Query, R any] interface {
+	Handle(ctx context.Context, query Q) (R, error)
+}
+
+// Get{{ .ModuleNameTitle }}ByIDQuery represents the read operation payload.
+type Get{{ .ModuleNameTitle }}ByIDQuery struct {
+	ID       string
+	TenantID string
+}
+
+func (q Get{{ .ModuleNameTitle }}ByIDQuery) QueryName() string {
+	return "Get{{ .ModuleNameTitle }}ByIDQuery"
+}

@@ -126,4 +126,19 @@ type ScaffoldService interface {
 
 	// AddMultitenancy scaffolds Row Level Security (RLS) SQL policies for tenant isolation.
 	AddMultitenancy(ctx context.Context, startDir, moduleName string, dryRun, force bool) error
+
+	// AddCQRS scaffolds Command and Query handlers separated within module scope.
+	AddCQRS(ctx context.Context, startDir, moduleName string, dryRun, force bool) error
+
+	// AddOutbox scaffolds Transactional Outbox pattern infrastructure and SQL migrations.
+	AddOutbox(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddSaga scaffolds Distributed Saga workflow engine and step orchestrators.
+	AddSaga(ctx context.Context, startDir, workflowName string, dryRun, force bool) error
+
+	// AddWebhook scaffolds secure signed webhook dispatcher and signature verifier middleware.
+	AddWebhook(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddDiscovery scaffolds service discovery registration client (Consul or etcd).
+	AddDiscovery(ctx context.Context, startDir, provider string, dryRun, force bool) error
 }

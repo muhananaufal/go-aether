@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/muhananaufal/go-aether/internal/adapter/writer"
 	"github.com/muhananaufal/go-aether/internal/core/domain"
@@ -454,6 +455,183 @@ func (s *AetherScaffoldService) AddMultitenancy(ctx context.Context, startDir, m
 	}
 
 	destFile := filepath.Join(projectRoot, "migrations", fmt.Sprintf("rls_%s.sql", strings.ToLower(moduleName)))
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddCQRS scaffolds Command and Query handlers separated within module scope.
+func (s *AetherScaffoldService) AddCQRS(ctx context.Context, startDir, moduleName string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(moduleName, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	moduleDir := filepath.Join(projectRoot, "internal", "modules", strings.ToLower(moduleName), "cqrs")
+
+	// Render command.go
+	cmdContent, err := s.engine.Render(ctx, "distributed/cqrs_command.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(moduleDir, "command.go"), cmdContent, force, dryRun)
+
+	// Render query.go
+	queryContent, err := s.engine.Render(ctx, "distributed/cqrs_query.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(moduleDir, "query.go"), queryContent, force, dryRun)
+
+	// Render bus.go
+	busContent, err := s.engine.Render(ctx, "distributed/cqrs_bus.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(moduleDir, "bus.go"), busContent, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddOutbox scaffolds Transactional Outbox pattern infrastructure and SQL migrations.
+func (s *AetherScaffoldService) AddOutbox(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("outbox", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+
+	// Render pkg/outbox/outbox.go
+	outboxContent, err := s.engine.Render(ctx, "distributed/outbox.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "outbox", "outbox.go"), outboxContent, force, dryRun)
+
+	// Render migrations/timestamp_create_outbox.up.sql & down.sql
+	timestamp := time.Now().Format("20060102150405")
+	upContent, err := s.engine.Render(ctx, "distributed/outbox_up.sql.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(projectRoot, "migrations", fmt.Sprintf("%s_create_outbox_events.up.sql", timestamp)), upContent, force, dryRun)
+
+	downContent, err := s.engine.Render(ctx, "distributed/outbox_down.sql.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(projectRoot, "migrations", fmt.Sprintf("%s_create_outbox_events.down.sql", timestamp)), downContent, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddSaga scaffolds Distributed Saga workflow engine and step orchestrators.
+func (s *AetherScaffoldService) AddSaga(ctx context.Context, startDir, workflowName string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(workflowName, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+
+	// Render pkg/saga/saga.go (Core engine)
+	engineContent, err := s.engine.Render(ctx, "distributed/saga_engine.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "saga", "saga.go"), engineContent, force, dryRun)
+
+	// Render internal/workflows/<workflow>_saga.go
+	workflowContent, err := s.engine.Render(ctx, "distributed/saga_workflow.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(projectRoot, "internal", "workflows", fmt.Sprintf("%s_saga.go", strings.ToLower(workflowName))), workflowContent, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddWebhook scaffolds secure signed webhook dispatcher and signature verifier middleware.
+func (s *AetherScaffoldService) AddWebhook(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("webhook", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	webhookDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "webhook")
+
+	// Render pkg/webhook/dispatcher.go
+	dispContent, err := s.engine.Render(ctx, "distributed/webhook_dispatcher.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(webhookDir, "dispatcher.go"), dispContent, force, dryRun)
+
+	// Render pkg/webhook/receiver.go
+	recvContent, err := s.engine.Render(ctx, "distributed/webhook_receiver.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(webhookDir, "receiver.go"), recvContent, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddDiscovery scaffolds service discovery registration client (Consul or etcd).
+func (s *AetherScaffoldService) AddDiscovery(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	providerLower := strings.ToLower(provider)
+	if providerLower != "consul" && providerLower != "etcd" {
+		return fmt.Errorf("unsupported discovery provider '%s', must be 'consul' or 'etcd'", provider)
+	}
+
+	data, err := domain.NewTemplateData(providerLower, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	discoveryDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "discovery")
+
+	templateName := fmt.Sprintf("distributed/discovery_%s.go.tmpl", providerLower)
+	content, err := s.engine.Render(ctx, templateName, data)
+	if err != nil {
+		return err
+	}
+
+	destFile := filepath.Join(discoveryDir, fmt.Sprintf("%s.go", providerLower))
 	tx.Stage(destFile, content, force, dryRun)
 
 	return tx.Commit(ctx)
