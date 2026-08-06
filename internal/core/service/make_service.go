@@ -172,3 +172,90 @@ func (s *AetherScaffoldService) MakeHandler(ctx context.Context, startDir, modul
 
 	return tx.Commit(ctx)
 }
+
+// MakeDomain generates only the domain layer entity for a specific module.
+func (s *AetherScaffoldService) MakeDomain(ctx context.Context, startDir, moduleName string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(moduleName, manifest, []string{"http"}, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	archPrefix := manifest.Architecture.Pattern
+
+	tmplName := fmt.Sprintf("%s/domain_only.go.tmpl", archPrefix)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s.go", strings.ToLower(moduleName))
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakePort generates only the port interface contract for a specific module.
+func (s *AetherScaffoldService) MakePort(ctx context.Context, startDir, moduleName string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(moduleName, manifest, []string{"http"}, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	archPrefix := manifest.Architecture.Pattern
+
+	tmplName := fmt.Sprintf("%s/port_only.go.tmpl", archPrefix)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s_port.go", strings.ToLower(moduleName))
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Port, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// MakeRepository generates only the infrastructure repository for a specific module.
+func (s *AetherScaffoldService) MakeRepository(ctx context.Context, startDir, moduleName string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData(moduleName, manifest, []string{"http"}, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	archPrefix := manifest.Architecture.Pattern
+
+	tmplName := fmt.Sprintf("%s/repository_only.go.tmpl", archPrefix)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	fileName := fmt.Sprintf("%s_repository.go", strings.ToLower(moduleName))
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Repository, fileName)
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

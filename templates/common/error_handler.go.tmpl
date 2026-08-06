@@ -1,0 +1,22 @@
+package common
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+// ErrorResponse represents a standardized API error structure.
+type ErrorResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
+// RespondWithError normalizes HTTP error responses across the application.
+func RespondWithError(w http.ResponseWriter, code int, message string) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(ErrorResponse{
+		Code:    code,
+		Message: message,
+	})
+}

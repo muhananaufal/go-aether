@@ -317,3 +317,91 @@ func (s *AetherScaffoldService) AddAI(ctx context.Context, startDir, provider st
 	tx.Stage(destFile, content, force, dryRun)
 	return tx.Commit(ctx)
 }
+
+// AddDI sets up a dependency injection container (e.g. fx, wire).
+func (s *AetherScaffoldService) AddDI(ctx context.Context, startDir, diType string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, _ := domain.NewTemplateData("di", manifest, nil, false, false)
+	tmplName := fmt.Sprintf("common/di_%s.go.tmpl", diType)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "config", "di.go")
+	
+	tx.Stage(destFile, content, force, dryRun)
+	return tx.Commit(ctx)
+}
+
+// AddConfig sets up a centralized configuration manager (e.g. viper, koanf).
+func (s *AetherScaffoldService) AddConfig(ctx context.Context, startDir, configType string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, _ := domain.NewTemplateData("config", manifest, nil, false, false)
+	tmplName := fmt.Sprintf("common/config_%s.go.tmpl", configType)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "config", "config.go")
+	
+	tx.Stage(destFile, content, force, dryRun)
+	return tx.Commit(ctx)
+}
+
+// AddError sets up a standardized centralized error handler.
+func (s *AetherScaffoldService) AddError(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, _ := domain.NewTemplateData("error", manifest, nil, false, false)
+	tmplName := "common/error_handler.go.tmpl"
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "common", "error.go")
+	
+	tx.Stage(destFile, content, force, dryRun)
+	return tx.Commit(ctx)
+}
+
+// AddValidator sets up the struct validation wrapper.
+func (s *AetherScaffoldService) AddValidator(ctx context.Context, startDir, validatorType string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, _ := domain.NewTemplateData("validator", manifest, nil, false, false)
+	tmplName := fmt.Sprintf("common/validator_%s.go.tmpl", validatorType)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "common", "validator.go")
+	
+	tx.Stage(destFile, content, force, dryRun)
+	return tx.Commit(ctx)
+}

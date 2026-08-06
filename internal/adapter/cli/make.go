@@ -96,3 +96,84 @@ func newMakeHandlerCommand(svc port.ScaffoldService, globals *globalFlags) *cobr
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
 	return cmd
 }
+
+func newMakeDomainCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:domain [module-name]",
+		Short: "Generate only the domain layer entity for a specific module",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			moduleName := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakeDomain(cmd.Context(), cwd, moduleName, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("✨ Generated domain entity for module [%s]\n", moduleName)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
+	return cmd
+}
+
+func newMakePortCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:port [module-name]",
+		Short: "Generate only the port interface contract for a specific module",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			moduleName := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakePort(cmd.Context(), cwd, moduleName, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("✨ Generated port interface for module [%s]\n", moduleName)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
+	return cmd
+}
+
+func newMakeRepositoryCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "make:repository [module-name]",
+		Short: "Generate only the infrastructure repository for a specific module",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			moduleName := args[0]
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.MakeRepository(cmd.Context(), cwd, moduleName, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("✨ Generated infrastructure repository for module [%s]\n", moduleName)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing generated target files")
+	return cmd
+}

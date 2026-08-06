@@ -282,3 +282,107 @@ func newAddAICommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Comm
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing ai file")
 	return cmd
 }
+
+func newAddDICommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:di [di-type]",
+		Short: "Set up a dependency injection container (e.g. fx, wire)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddDI(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🧩 Injected [%s] dependency injection container\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing DI file")
+	return cmd
+}
+
+func newAddConfigCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:config [config-type]",
+		Short: "Set up a centralized configuration manager (e.g. viper, koanf)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddConfig(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("⚙️ Injected [%s] centralized configuration manager\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing config file")
+	return cmd
+}
+
+func newAddErrorCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:error",
+		Short: "Set up a standardized centralized error handler",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddError(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("🚨 Injected standardized error handler")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing error file")
+	return cmd
+}
+
+func newAddValidatorCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:validator [validator-type]",
+		Short: "Set up the struct validation wrapper (e.g. playground)",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddValidator(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("✅ Injected [%s] struct validation wrapper\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing validator file")
+	return cmd
+}

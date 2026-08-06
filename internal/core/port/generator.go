@@ -64,6 +64,15 @@ type ScaffoldService interface {
 	// MakeHandler generates only the transport handler component for a specific module.
 	MakeHandler(ctx context.Context, startDir, moduleName, transport string, dryRun, force bool) error
 
+	// MakeDomain generates only the domain layer entity for a specific module.
+	MakeDomain(ctx context.Context, startDir, moduleName string, dryRun, force bool) error
+
+	// MakePort generates only the port interface contract for a specific module.
+	MakePort(ctx context.Context, startDir, moduleName string, dryRun, force bool) error
+
+	// MakeRepository generates only the infrastructure repository for a specific module.
+	MakeRepository(ctx context.Context, startDir, moduleName string, dryRun, force bool) error
+
 	// AddMiddleware injects middleware components into a target module's transport handler.
 	AddMiddleware(ctx context.Context, startDir, moduleName, middlewareType string, dryRun, force bool) error
 
@@ -93,4 +102,16 @@ type ScaffoldService interface {
 
 	// AddAI sets up the LLM proxy interface and stub.
 	AddAI(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddDI sets up a dependency injection container (e.g. fx, wire).
+	AddDI(ctx context.Context, startDir, diType string, dryRun, force bool) error
+
+	// AddConfig sets up a centralized configuration manager (e.g. viper, koanf).
+	AddConfig(ctx context.Context, startDir, configType string, dryRun, force bool) error
+
+	// AddError sets up a standardized centralized error handler.
+	AddError(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddValidator sets up the struct validation wrapper (e.g. go-playground/validator).
+	AddValidator(ctx context.Context, startDir, validatorType string, dryRun, force bool) error
 }

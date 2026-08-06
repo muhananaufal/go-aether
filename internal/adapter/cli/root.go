@@ -33,6 +33,9 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newMakeModuleCommand(svc, &flags))
 	rootCmd.AddCommand(newMakeServiceCommand(svc, &flags))
 	rootCmd.AddCommand(newMakeHandlerCommand(svc, &flags))
+	rootCmd.AddCommand(newMakeDomainCommand(svc, &flags))
+	rootCmd.AddCommand(newMakePortCommand(svc, &flags))
+	rootCmd.AddCommand(newMakeRepositoryCommand(svc, &flags))
 	rootCmd.AddCommand(newAddMiddlewareCommand(svc, &flags))
 	rootCmd.AddCommand(newAddCacheCommand(svc, &flags))
 	rootCmd.AddCommand(newAddTransportCommand(svc, &flags))
@@ -43,6 +46,10 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAddDeployCommand(svc, &flags))
 	rootCmd.AddCommand(newAddCICDCommand(svc, &flags))
 	rootCmd.AddCommand(newAddAICommand(svc, &flags))
+	rootCmd.AddCommand(newAddDICommand(svc, &flags))
+	rootCmd.AddCommand(newAddConfigCommand(svc, &flags))
+	rootCmd.AddCommand(newAddErrorCommand(svc, &flags))
+	rootCmd.AddCommand(newAddValidatorCommand(svc, &flags))
 
 	return rootCmd
 }

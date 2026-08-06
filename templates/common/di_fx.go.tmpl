@@ -1,0 +1,12 @@
+package config
+
+import (
+	"go.uber.org/fx"
+)
+
+// Module exports all dependencies for this component to the global container
+var Module = fx.Options(
+	// Add your constructor providers here
+	// fx.Provide(NewService),
+	// fx.Provide(NewRepository),
+)
