@@ -816,3 +816,90 @@ func (s *AetherScaffoldService) AddLogger(ctx context.Context, startDir, provide
 
 	return tx.Commit(ctx)
 }
+
+// AddHealthcheck scaffolds Kubernetes-compatible Liveness & Readiness probe handlers.
+func (s *AetherScaffoldService) AddHealthcheck(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("health", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	healthDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "health")
+
+	content, err := s.engine.Render(ctx, "plugins/healthcheck.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(healthDir, "healthcheck.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddSecrets scaffolds secret manager client (HashiCorp Vault or AWS Secrets Manager).
+func (s *AetherScaffoldService) AddSecrets(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	providerLower := strings.ToLower(provider)
+	if providerLower != "vault" && providerLower != "aws" {
+		providerLower = "vault"
+	}
+
+	data, err := domain.NewTemplateData(providerLower, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	secretsDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "secrets")
+
+	templateName := fmt.Sprintf("plugins/secrets_%s.go.tmpl", providerLower)
+	content, err := s.engine.Render(ctx, templateName, data)
+	if err != nil {
+		return err
+	}
+	destFile := filepath.Join(secretsDir, fmt.Sprintf("%s.go", providerLower))
+	tx.Stage(destFile, content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddLock scaffolds distributed lock (Redlock / Distributed Mutex) engine.
+func (s *AetherScaffoldService) AddLock(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	providerLower := strings.ToLower(provider)
+	if providerLower != "redis" {
+		providerLower = "redis"
+	}
+
+	data, err := domain.NewTemplateData(providerLower, manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	lockDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "lock")
+
+	content, err := s.engine.Render(ctx, "plugins/lock_redis.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(lockDir, "lock.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}

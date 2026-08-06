@@ -159,4 +159,13 @@ type ScaffoldService interface {
 
 	// AddLogger scaffolds structured JSON logger with context correlation tracking.
 	AddLogger(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddHealthcheck scaffolds Kubernetes-compatible Liveness & Readiness probe handlers.
+	AddHealthcheck(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddSecrets scaffolds secret manager client (HashiCorp Vault or AWS Secrets Manager).
+	AddSecrets(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddLock scaffolds distributed lock (Redlock / Distributed Mutex) engine.
+	AddLock(ctx context.Context, startDir, provider string, dryRun, force bool) error
 }

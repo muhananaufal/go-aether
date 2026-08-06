@@ -27,6 +27,7 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.PersistentFlags().BoolVar(&flags.DryRun, "dry-run", false, "simulate execution without mutating physical filesystem")
 
 	// Attach subcommands
+	rootCmd.AddCommand(newLsCommand(svc, &flags))
 	rootCmd.AddCommand(newInitCommand(svc, &flags))
 	rootCmd.AddCommand(newAdoptCommand(svc, &flags))
 	rootCmd.AddCommand(newDoctorCommand(svc, &flags))
@@ -65,6 +66,9 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAddMailerCommand(svc, &flags))
 	rootCmd.AddCommand(newAddFirebaseCommand(svc, &flags))
 	rootCmd.AddCommand(newAddLoggerCommand(svc, &flags))
+	rootCmd.AddCommand(newAddHealthcheckCommand(svc, &flags))
+	rootCmd.AddCommand(newAddSecretsCommand(svc, &flags))
+	rootCmd.AddCommand(newAddLockCommand(svc, &flags))
 
 	return rootCmd
 }
