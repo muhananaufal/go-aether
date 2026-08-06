@@ -1,0 +1,82 @@
+package twilio
+
+import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+)
+
+// Client sends SMS and WhatsApp messages via Twilio REST API.
+type Client struct {
+	accountSID string
+	authToken  string
+	fromNumber string
+	httpClient *http.Client
+}
+
+// NewClient instantiates a Twilio API client.
+func NewClient(accountSID, authToken, fromNumber string) (*Client, error) {
+	if accountSID == "" || authToken == "" {
+		return nil, errors.New("twilio: accountSID and authToken are required")
+	}
+
+	return &Client{
+		accountSID: accountSID,
+		authToken:  authToken,
+		fromNumber: fromNumber,
+		httpClient: &http.Client{Timeout: 10 * time.Second},
+	}, nil
+}
+
+// SendSMS delivers a text message to a destination phone number.
+func (c *Client) SendSMS(to, body string) error {
+	return c.send(to, body, false)
+}
+
+// SendWhatsApp delivers a WhatsApp template message to a destination phone number.
+func (c *Client) SendWhatsApp(to, body string) error {
+	return c.send("whatsapp:"+to, body, true)
+}
+
+func (c *Client) send(to, body string, isWhatsApp bool) error {
+	apiURL := fmt.Sprintf("https://api.twilio.com/2010-04-01/Accounts/%s/Messages.json", c.accountSID)
+
+	from := c.fromNumber
+	if isWhatsApp && !strings.HasPrefix(from, "whatsapp:") {
+		from = "whatsapp:" + from
+	}
+
+	data := url.Values{}
+	data.Set("To", to)
+	data.Set("From", from)
+	data.Set("Body", body)
+
+	req, err := http.NewRequest(http.MethodPost, apiURL, strings.NewReader(data.Encode()))
+	if err != nil {
+		return err
+	}
+
+	req.SetBasicAuth(c.accountSID, c.authToken)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("twilio: request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode >= 400 {
+		var errResp struct {
+			Message string `json:"message"`
+			Code    int    `json:"code"`
+		}
+		json.NewDecoder(resp.Body).Decode(&errResp)
+		return fmt.Errorf("twilio: api error (status %d): %s (code %d)", resp.StatusCode, errResp.Message, errResp.Code)
+	}
+
+	return nil
+}

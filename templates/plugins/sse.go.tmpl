@@ -1,0 +1,105 @@
+package sse
+
+import (
+	"fmt"
+	"net/http"
+	"sync"
+)
+
+// Event represents a single Server-Sent Event message payload.
+type Event struct {
+	ID    string
+	Event string
+	Data  string
+}
+
+// Broker manages active client SSE event streams.
+type Broker struct {
+	clients map[chan Event]bool
+	newClients chan chan Event
+	closingClients chan chan Event
+	events chan Event
+	mu sync.Mutex
+}
+
+// NewBroker initializes an SSE event broker.
+func NewBroker() *Broker {
+	b := &Broker{
+		clients:        make(map[chan Event]bool),
+		newClients:     make(chan chan Event),
+		closingClients: make(chan chan Event),
+		events:         make(chan Event),
+	}
+	go b.listen()
+	return b
+}
+
+func (b *Broker) listen() {
+	for {
+		select {
+		case s := <-b.newClients:
+			b.mu.Lock()
+			b.clients[s] = true
+			b.mu.Unlock()
+		case s := <-b.closingClients:
+			b.mu.Lock()
+			delete(b.clients, s)
+			close(s)
+			b.mu.Unlock()
+		case event := <-b.events:
+			b.mu.Lock()
+			for s := range b.clients {
+				select {
+				case s <- event:
+				default:
+					// Drop event if client buffer is full to prevent broker head-of-line blocking
+				}
+			}
+			b.mu.Unlock()
+		}
+	}
+}
+
+// Broadcast sends an event to all connected SSE clients.
+func (b *Broker) Broadcast(event Event) {
+	b.events <- event
+}
+
+// ServeHTTP handles incoming SSE HTTP streaming requests.
+func (b *Broker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	clientChan := make(chan Event, 10)
+	b.newClients <- clientChan
+
+	defer func() {
+		b.closingClients <- clientChan
+	}()
+
+	notify := r.Context().Done()
+
+	for {
+		select {
+		case <-notify:
+			return
+		case event := <-clientChan:
+			if event.ID != "" {
+				fmt.Fprintf(w, "id: %s\n", event.ID)
+			}
+			if event.Event != "" {
+				fmt.Fprintf(w, "event: %s\n", event.Event)
+			}
+			fmt.Fprintf(w, "data: %s\n\n", event.Data)
+			flusher.Flush()
+		}
+	}
+}

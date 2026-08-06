@@ -210,4 +210,19 @@ type ScaffoldService interface {
 
 	// AddPricingEngine scaffolds rule-based tiered pricing and fee calculation engine.
 	AddPricingEngine(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddWebSocket scaffolds WebSocket hub and multi-client connection pool (Gorilla / Nhooyr).
+	AddWebSocket(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddSSE scaffolds Server-Sent Events unidirectional streaming broker.
+	AddSSE(ctx context.Context, startDir string, dryRun, force bool) error
+
+	// AddWebRTC scaffolds Pion WebRTC peer connection and data channel signaling hub.
+	AddWebRTC(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddMQTT scaffolds Paho MQTT client for IoT telemetry pub/sub messaging.
+	AddMQTT(ctx context.Context, startDir, provider string, dryRun, force bool) error
+
+	// AddTwilio scaffolds Twilio SMS and WhatsApp omni-channel delivery client.
+	AddTwilio(ctx context.Context, startDir string, dryRun, force bool) error
 }

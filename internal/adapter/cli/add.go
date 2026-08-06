@@ -1036,3 +1036,133 @@ func newAddPricingEngineCommand(svc port.ScaffoldService, globals *globalFlags) 
 	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing pricing files")
 	return cmd
 }
+
+func newAddWebSocketCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:websocket [gorilla|nhooyr]",
+		Short: "Set up WebSocket hub and connection pool",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddWebSocket(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("🔌 Injected [%s] WebSocket hub engine\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing websocket files")
+	return cmd
+}
+
+func newAddSSECommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:sse",
+		Short: "Set up Server-Sent Events (SSE) live streaming broker",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddSSE(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("📡 Injected Server-Sent Events (SSE) streaming broker")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing sse files")
+	return cmd
+}
+
+func newAddWebRTCCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:webrtc [pion]",
+		Short: "Set up Pion WebRTC peer-to-peer data channel hub",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddWebRTC(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("📹 Injected [%s] WebRTC signaling and data channel engine\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing webrtc files")
+	return cmd
+}
+
+func newAddMQTTCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:mqtt [paho]",
+		Short: "Set up Paho MQTT client for IoT telemetry pub/sub",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddMQTT(cmd.Context(), cwd, args[0], globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("📶 Injected [%s] MQTT IoT pub/sub client\n", args[0])
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing mqtt files")
+	return cmd
+}
+
+func newAddTwilioCommand(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
+	var force bool
+
+	cmd := &cobra.Command{
+		Use:   "add:twilio",
+		Short: "Set up Twilio SMS & WhatsApp omni-channel messaging client",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cwd, err := os.Getwd()
+			if err != nil {
+				return err
+			}
+
+			err = svc.AddTwilio(cmd.Context(), cwd, globals.DryRun, force)
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("💬 Injected Twilio SMS & WhatsApp messaging client")
+			return nil
+		},
+	}
+	cmd.Flags().BoolVarP(&force, "force", "f", false, "Force overwrite existing twilio files")
+	return cmd
+}

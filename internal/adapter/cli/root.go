@@ -83,6 +83,11 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAddDecimalCommand(svc, &flags))
 	rootCmd.AddCommand(newAddReconciliationCommand(svc, &flags))
 	rootCmd.AddCommand(newAddPricingEngineCommand(svc, &flags))
+	rootCmd.AddCommand(newAddWebSocketCommand(svc, &flags))
+	rootCmd.AddCommand(newAddSSECommand(svc, &flags))
+	rootCmd.AddCommand(newAddWebRTCCommand(svc, &flags))
+	rootCmd.AddCommand(newAddMQTTCommand(svc, &flags))
+	rootCmd.AddCommand(newAddTwilioCommand(svc, &flags))
 
 	return rootCmd
 }

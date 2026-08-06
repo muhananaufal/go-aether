@@ -1128,3 +1128,128 @@ func (s *AetherScaffoldService) AddPricingEngine(ctx context.Context, startDir s
 
 	return tx.Commit(ctx)
 }
+
+// AddWebSocket scaffolds WebSocket hub and multi-client connection pool (Gorilla / Nhooyr).
+func (s *AetherScaffoldService) AddWebSocket(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("websocket", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "websocket")
+
+	content, err := s.engine.Render(ctx, "plugins/websocket_gorilla.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "websocket.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddSSE scaffolds Server-Sent Events unidirectional streaming broker.
+func (s *AetherScaffoldService) AddSSE(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("sse", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "sse")
+
+	content, err := s.engine.Render(ctx, "plugins/sse.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "sse.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddWebRTC scaffolds Pion WebRTC peer connection and data channel signaling hub.
+func (s *AetherScaffoldService) AddWebRTC(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("webrtc", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "webrtc")
+
+	content, err := s.engine.Render(ctx, "plugins/webrtc_pion.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "webrtc.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddMQTT scaffolds Paho MQTT client for IoT telemetry pub/sub messaging.
+func (s *AetherScaffoldService) AddMQTT(ctx context.Context, startDir, provider string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("mqtt", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "mqtt")
+
+	content, err := s.engine.Render(ctx, "plugins/mqtt_paho.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "mqtt.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
+
+// AddTwilio scaffolds Twilio SMS and WhatsApp omni-channel delivery client.
+func (s *AetherScaffoldService) AddTwilio(ctx context.Context, startDir string, dryRun, force bool) error {
+	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
+	if err != nil {
+		return fmt.Errorf("failed to locate aether.yaml: %w", err)
+	}
+
+	data, err := domain.NewTemplateData("twilio", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	tx := writer.NewTransactionalBuffer(s.fs)
+	projectRoot := filepath.Dir(manifestPath)
+	destDir := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "twilio")
+
+	content, err := s.engine.Render(ctx, "plugins/twilio.go.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.Stage(filepath.Join(destDir, "twilio.go"), content, force, dryRun)
+
+	return tx.Commit(ctx)
+}
