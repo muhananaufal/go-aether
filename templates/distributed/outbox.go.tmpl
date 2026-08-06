@@ -1,0 +1,34 @@
+package outbox
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"time"
+)
+
+// OutboxRecord represents an event persisted atomically within a business transaction.
+type OutboxRecord struct {
+	ID          string    `json:"id"`
+	AggregateID string    `json:"aggregate_id"`
+	EventType   string    `json:"event_type"`
+	Payload     []byte    `json:"payload"`
+	Status      string    `json:"status"` // PENDING, PUBLISHED, FAILED
+	CreatedAt   time.Time `json:"created_at"`
+	ProcessedAt *time.Time`json:"processed_at,omitempty"`
+}
+
+// Store atomically inserts an event into the outbox table inside an existing transaction.
+func Store(ctx context.Context, tx *sql.Tx, aggregateID, eventType string, payload interface{}) error {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+
+	query := `
+		INSERT INTO outbox_events (aggregate_id, event_type, payload, status, created_at)
+		VALUES ($1, $2, $3, 'PENDING', NOW())
+	`
+	_, err = tx.ExecContext(ctx, query, aggregateID, eventType, data)
+	return err
+}

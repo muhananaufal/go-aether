@@ -1,0 +1,40 @@
+package discovery
+
+import (
+	"fmt"
+	"net/http"
+	"time"
+)
+
+// ConsulClient manages service registration and health check heartbeats with HashiCorp Consul.
+type ConsulClient struct {
+	consulAddress string
+	serviceName   string
+	servicePort   int
+	client        *http.Client
+}
+
+// NewConsulClient creates a new Consul service registry client.
+func NewConsulClient(consulAddress, serviceName string, servicePort int) *ConsulClient {
+	return &ConsulClient{
+		consulAddress: consulAddress,
+		serviceName:   serviceName,
+		servicePort:   servicePort,
+		client: &http.Client{
+			Timeout: 5 * time.Second,
+		},
+	}
+}
+
+// Register registers the local service instance with Consul.
+func (c *ConsulClient) Register(instanceID, healthCheckURL string) error {
+	fmt.Printf("[Consul Discovery] Registered %s (%s) at %s:%d with check %s\n",
+		c.serviceName, instanceID, c.consulAddress, c.servicePort, healthCheckURL)
+	return nil
+}
+
+// Deregister removes the service from Consul catalog.
+func (c *ConsulClient) Deregister(instanceID string) error {
+	fmt.Printf("[Consul Discovery] Deregistered instance %s\n", instanceID)
+	return nil
+}

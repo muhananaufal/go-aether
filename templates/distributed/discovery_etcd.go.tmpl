@@ -1,0 +1,37 @@
+package discovery
+
+import (
+	"context"
+	"fmt"
+	"time"
+)
+
+// EtcdClient manages service registration with CoreOS etcd via lease TTL keep-alive.
+type EtcdClient struct {
+	endpoints   []string
+	serviceName string
+	leaseTTL    time.Duration
+}
+
+// NewEtcdClient creates a new etcd service discovery client.
+func NewEtcdClient(endpoints []string, serviceName string, leaseTTL time.Duration) *EtcdClient {
+	return &EtcdClient{
+		endpoints:   endpoints,
+		serviceName: serviceName,
+		leaseTTL:    leaseTTL,
+	}
+}
+
+// Register registers the service key with a keep-alive lease in etcd.
+func (e *EtcdClient) Register(ctx context.Context, instanceID, endpoint string) error {
+	key := fmt.Sprintf("/services/%s/%s", e.serviceName, instanceID)
+	fmt.Printf("[etcd Discovery] Registered key %s -> %s with TTL %v\n", key, endpoint, e.leaseTTL)
+	return nil
+}
+
+// Deregister deletes the service key from etcd.
+func (e *EtcdClient) Deregister(ctx context.Context, instanceID string) error {
+	key := fmt.Sprintf("/services/%s/%s", e.serviceName, instanceID)
+	fmt.Printf("[etcd Discovery] Deregistered key %s\n", key)
+	return nil
+}

@@ -1,0 +1,59 @@
+package workflows
+
+import (
+	"context"
+	"{{ .PackagePath }}/pkg/saga"
+)
+
+// {{ .ModuleNameTitle }}Saga coordinates the {{ .ModuleNameTitle }} distributed workflow.
+type {{ .ModuleNameTitle }}Saga struct {
+	orchestrator *saga.Orchestrator
+}
+
+// New{{ .ModuleNameTitle }}Saga initializes the workflow with step definitions.
+func New{{ .ModuleNameTitle }}Saga() *{{ .ModuleNameTitle }}Saga {
+	orch := saga.NewOrchestrator()
+	orch.AddStep(&reserve{{ .ModuleNameTitle }}Step{})
+	orch.AddStep(&processPaymentStep{})
+
+	return &{{ .ModuleNameTitle }}Saga{
+		orchestrator: orch,
+	}
+}
+
+// Run executes the saga workflow.
+func (s *{{ .ModuleNameTitle }}Saga) Run(ctx context.Context) error {
+	return s.orchestrator.Execute(ctx)
+}
+
+type reserve{{ .ModuleNameTitle }}Step struct{}
+
+func (s *reserve{{ .ModuleNameTitle }}Step) Name() string {
+	return "Reserve{{ .ModuleNameTitle }}"
+}
+
+func (s *reserve{{ .ModuleNameTitle }}Step) Execute(ctx context.Context) error {
+	// Implement forward reservation logic
+	return nil
+}
+
+func (s *reserve{{ .ModuleNameTitle }}Step) Compensate(ctx context.Context) error {
+	// Implement rollback / release reservation
+	return nil
+}
+
+type processPaymentStep struct{}
+
+func (s *processPaymentStep) Name() string {
+	return "ProcessPayment"
+}
+
+func (s *processPaymentStep) Execute(ctx context.Context) error {
+	// Implement charge logic
+	return nil
+}
+
+func (s *processPaymentStep) Compensate(ctx context.Context) error {
+	// Implement refund logic
+	return nil
+}

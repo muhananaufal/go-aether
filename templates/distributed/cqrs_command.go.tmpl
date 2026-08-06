@@ -1,0 +1,25 @@
+package cqrs
+
+import (
+	"context"
+)
+
+// Command defines a marker interface for all state-mutating operations.
+type Command interface {
+	CommandName() string
+}
+
+// CommandHandler processes a specific command.
+type CommandHandler[C Command] interface {
+	Handle(ctx context.Context, cmd C) error
+}
+
+// Create{{ .ModuleNameTitle }}Command represents the write operation payload.
+type Create{{ .ModuleNameTitle }}Command struct {
+	TenantID string
+	Payload  map[string]interface{}
+}
+
+func (c Create{{ .ModuleNameTitle }}Command) CommandName() string {
+	return "Create{{ .ModuleNameTitle }}Command"
+}

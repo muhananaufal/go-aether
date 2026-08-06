@@ -1,0 +1,44 @@
+package cqrs
+
+import (
+	"context"
+	"fmt"
+	"sync"
+)
+
+// InMemCommandBus is a thread-safe in-memory dispatcher for CQRS commands.
+type InMemCommandBus struct {
+	mu       sync.RWMutex
+	handlers map[string]interface{}
+}
+
+// NewInMemCommandBus creates a new command bus instance.
+func NewInMemCommandBus() *InMemCommandBus {
+	return &InMemCommandBus{
+		handlers: make(map[string]interface{}),
+	}
+}
+
+// Register attaches a handler for a given command name.
+func (b *InMemCommandBus) Register(commandName string, handler interface{}) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	b.handlers[commandName] = handler
+}
+
+// Dispatch executes the registered handler for the command.
+func (b *InMemCommandBus) Dispatch(ctx context.Context, cmd Command) error {
+	b.mu.RLock()
+	h, exists := b.handlers[cmd.CommandName()]
+	b.mu.RUnlock()
+
+	if !exists {
+		return fmt.Errorf("no command handler registered for %s", cmd.CommandName())
+	}
+
+	if handler, ok := h.(func(context.Context, Command) error); ok {
+		return handler(ctx, cmd)
+	}
+
+	return fmt.Errorf("invalid handler signature for %s", cmd.CommandName())
+}

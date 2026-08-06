@@ -1,0 +1,54 @@
+package saga
+
+import (
+	"context"
+	"fmt"
+)
+
+// Step represents an individual action within a distributed transaction with a rollback compensation.
+type Step interface {
+	Name() string
+	Execute(ctx context.Context) error
+	Compensate(ctx context.Context) error
+}
+
+// Orchestrator coordinates sequential execution of saga steps with automatic backward compensation.
+type Orchestrator struct {
+	steps []Step
+}
+
+// NewOrchestrator creates a new Saga orchestrator instance.
+func NewOrchestrator() *Orchestrator {
+	return &Orchestrator{
+		steps: make([]Step, 0),
+	}
+}
+
+// AddStep registers a step into the saga execution pipeline.
+func (o *Orchestrator) AddStep(step Step) *Orchestrator {
+	o.steps = append(o.steps, step)
+	return o
+}
+
+// Execute runs all steps sequentially. If any step fails, it executes compensations in reverse order.
+func (o *Orchestrator) Execute(ctx context.Context) error {
+	executed := make([]Step, 0, len(o.steps))
+
+	for _, step := range o.steps {
+		if err := step.Execute(ctx); err != nil {
+			// Trigger reverse compensation
+			o.compensate(ctx, executed)
+			return fmt.Errorf("saga step '%s' failed: %w (compensations executed)", step.Name(), err)
+		}
+		executed = append(executed, step)
+	}
+
+	return nil
+}
+
+func (o *Orchestrator) compensate(ctx context.Context, executed []Step) {
+	for i := len(executed) - 1; i >= 0; i-- {
+		step := executed[i]
+		_ = step.Compensate(ctx)
+	}
+}
