@@ -1,0 +1,70 @@
+package pricing
+
+import (
+	"errors"
+
+	"github.com/shopspring/decimal"
+)
+
+// PricingTier defines tiered fee schedule based on volume or amount.
+type PricingTier struct {
+	MinAmount     decimal.Decimal `json:"min_amount"`
+	MaxAmount     decimal.Decimal `json:"max_amount"`
+	PercentageFee decimal.Decimal `json:"percentage_fee"` // e.g. 0.029 for 2.9%
+	FixedFee      decimal.Decimal `json:"fixed_fee"`      // e.g. 0.30 for $0.30
+}
+
+// PricingBreakdown details the calculated fees and final amounts.
+type PricingBreakdown struct {
+	BaseAmount    decimal.Decimal `json:"base_amount"`
+	PercentageFee decimal.Decimal `json:"percentage_fee"`
+	FixedFee      decimal.Decimal `json:"fixed_fee"`
+	TotalFee      decimal.Decimal `json:"total_fee"`
+	NetAmount     decimal.Decimal `json:"net_amount"`
+	Currency      string          `json:"currency"`
+}
+
+// Engine calculates pricing breakdowns based on tiered rate cards.
+type Engine struct {
+	tiers []PricingTier
+}
+
+// NewEngine constructs a Pricing Engine with configured rate card tiers.
+func NewEngine(tiers []PricingTier) (*Engine, error) {
+	if len(tiers) == 0 {
+		return nil, errors.New("pricing: at least one pricing tier must be defined")
+	}
+	return &Engine{tiers: tiers}, nil
+}
+
+// Calculate computes exact fee breakdown for a transaction amount.
+func (e *Engine) Calculate(amount decimal.Decimal, currency string) (PricingBreakdown, error) {
+	if !amount.IsPositive() {
+		return PricingBreakdown{}, errors.New("pricing: amount must be strictly positive")
+	}
+
+	var matchedTier *PricingTier
+	for _, tier := range e.tiers {
+		if amount.GreaterThanOrEqual(tier.MinAmount) && (tier.MaxAmount.IsZero() || amount.LessThanOrEqual(tier.MaxAmount)) {
+			matchedTier = &tier
+			break
+		}
+	}
+
+	if matchedTier == nil {
+		matchedTier = &e.tiers[0]
+	}
+
+	percentageFee := amount.Mul(matchedTier.PercentageFee)
+	totalFee := percentageFee.Add(matchedTier.FixedFee)
+	netAmount := amount.Sub(totalFee)
+
+	return PricingBreakdown{
+		BaseAmount:    amount,
+		PercentageFee: percentageFee,
+		FixedFee:      matchedTier.FixedFee,
+		TotalFee:      totalFee,
+		NetAmount:     netAmount,
+		Currency:      currency,
+	}, nil
+}

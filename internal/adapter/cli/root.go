@@ -73,6 +73,11 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAddCryptoCommand(svc, &flags))
 	rootCmd.AddCommand(newAddProfilingCommand(svc, &flags))
 	rootCmd.AddCommand(newAddFeatureFlagsCommand(svc, &flags))
+	rootCmd.AddCommand(newAddIdempotencyCommand(svc, &flags))
+	rootCmd.AddCommand(newAddLedgerCommand(svc, &flags))
+	rootCmd.AddCommand(newAddDecimalCommand(svc, &flags))
+	rootCmd.AddCommand(newAddReconciliationCommand(svc, &flags))
+	rootCmd.AddCommand(newAddPricingEngineCommand(svc, &flags))
 
 	return rootCmd
 }

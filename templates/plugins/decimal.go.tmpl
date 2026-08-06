@@ -1,0 +1,83 @@
+package money
+
+import (
+	"fmt"
+
+	"github.com/shopspring/decimal"
+)
+
+// Money represents an immutable financial amount bound to a standard currency.
+type Money struct {
+	amount   decimal.Decimal
+	currency string
+}
+
+// New creates a Money instance with decimal value.
+func New(amount decimal.Decimal, currency string) Money {
+	return Money{
+		amount:   amount,
+		currency: currency,
+	}
+}
+
+// FromString parses string into a Money instance.
+func FromString(amountStr, currency string) (Money, error) {
+	d, err := decimal.NewFromString(amountStr)
+	if err != nil {
+		return Money{}, fmt.Errorf("money: invalid amount %q: %w", amountStr, err)
+	}
+	return Money{amount: d, currency: currency}, nil
+}
+
+// FromFloat creates Money from float64 (safely converts via string to prevent binary floating-point precision loss).
+func FromFloat(f float64, currency string) Money {
+	return Money{
+		amount:   decimal.NewFromFloat(f),
+		currency: currency,
+	}
+}
+
+// Amount returns the underlying decimal amount.
+func (m Money) Amount() decimal.Decimal {
+	return m.amount
+}
+
+// Currency returns the ISO currency string.
+func (m Money) Currency() string {
+	return m.currency
+}
+
+// Add sums two money values with identical currency.
+func (m Money) Add(other Money) (Money, error) {
+	if m.currency != other.currency {
+		return Money{}, fmt.Errorf("money: cannot add %s to %s", other.currency, m.currency)
+	}
+	return Money{
+		amount:   m.amount.Add(other.amount),
+		currency: m.currency,
+	}, nil
+}
+
+// Sub subtracts two money values with identical currency.
+func (m Money) Sub(other Money) (Money, error) {
+	if m.currency != other.currency {
+		return Money{}, fmt.Errorf("money: cannot subtract %s from %s", other.currency, m.currency)
+	}
+	return Money{
+		amount:   m.amount.Sub(other.amount),
+		currency: m.currency,
+	}, nil
+}
+
+// Multiply scales money by a multiplier with bank rounding.
+func (m Money) Multiply(multiplier decimal.Decimal) Money {
+	return Money{
+		amount:   m.amount.Mul(multiplier),
+		currency: m.currency,
+	}
+}
+
+// Format formats money to given decimal scale.
+func (m Money) Format(places int32) string {
+	return fmt.Sprintf("%s %s", m.currency, m.amount.StringFixed(places))
+}

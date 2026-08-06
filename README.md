@@ -90,7 +90,7 @@ go-aether doctor
 
 ---
 
-## 🗺️ Complete CLI Command Taxonomy (v0.8.2)
+## 🗺️ Complete CLI Command Taxonomy (v0.8.3)
 
 ### 🔨 Core Generators & Inspectors (`make:*`, `init`, `ls`)
 | Command | Description | Example |
@@ -105,6 +105,15 @@ go-aether doctor
 | `make:repository [name]` | Scaffold standalone persistence repository | `go-aether make:repository order` |
 | `make:migration [name]` | Generate SQL migration pair (Goose / Golang-Migrate) | `go-aether make:migration add_users` |
 | `make:seeder [name]` | Generate database dummy data seeder | `go-aether make:seeder initial_users` |
+
+### 🏦 Fintech & Financial Reliability Engine (`add:*`)
+| Command | Description | Example |
+| :--- | :--- | :--- |
+| `add:idempotency [provider]` | Idempotency-Key validation middleware with atomic lock | `go-aether add:idempotency redis` |
+| `add:ledger` | Double-Entry bookkeeping ledger engine (Zero-Sum Invariant) | `go-aether add:ledger` |
+| `add:decimal` | High-precision decimal money arithmetic helpers | `go-aether add:decimal` |
+| `add:reconciliation` | Automated settlement & transaction reconciliation matcher | `go-aether add:reconciliation` |
+| `add:pricing-engine` | Rule-based tiered pricing & dynamic fee calculator | `go-aether add:pricing-engine` |
 
 ### ⚡ Distributed Patterns, Locks, Secrets & Authz (`add:*`)
 | Command | Description | Example |

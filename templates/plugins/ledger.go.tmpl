@@ -1,0 +1,88 @@
+package ledger
+
+import (
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/shopspring/decimal"
+)
+
+var (
+	// ErrUnbalancedTransaction is returned when total debits do not equal total credits.
+	ErrUnbalancedTransaction = errors.New("ledger: transaction is unbalanced (debit != credit)")
+	// ErrEmptyEntries is returned when a transaction contains no line items.
+	ErrEmptyEntries = errors.New("ledger: transaction must contain at least two entries")
+	// ErrNegativeAmount is returned when an entry has a non-positive amount.
+	ErrNegativeAmount = errors.New("ledger: entry amount must be strictly positive")
+)
+
+// EntryType defines whether an entry is a Debit or Credit.
+type EntryType string
+
+const (
+	// EntryDebit represents an increase in assets/expenses or decrease in liabilities/equity.
+	EntryDebit EntryType = "DEBIT"
+	// EntryCredit represents an increase in liabilities/equity/revenue or decrease in assets.
+	EntryCredit EntryType = "CREDIT"
+)
+
+// Entry represents a single line item in a double-entry journal.
+type Entry struct {
+	AccountID string          `json:"account_id"`
+	Type      EntryType       `json:"type"`
+	Amount    decimal.Decimal `json:"amount"`
+	Currency  string          `json:"currency"`
+}
+
+// Transaction represents an immutable, balanced multi-entry financial event.
+type Transaction struct {
+	ID          string    `json:"id"`
+	ReferenceID string    `json:"reference_id"`
+	Description string    `json:"description"`
+	Entries     []Entry   `json:"entries"`
+	PostedAt    time.Time `json:"posted_at"`
+}
+
+// NewTransaction constructs and validates a balanced Double-Entry Transaction.
+func NewTransaction(id, refID, desc string, entries []Entry) (*Transaction, error) {
+	if len(entries) < 2 {
+		return nil, ErrEmptyEntries
+	}
+
+	var totalDebit decimal.Decimal
+	var totalCredit decimal.Decimal
+	var baseCurrency string
+
+	for i, e := range entries {
+		if !e.Amount.IsPositive() {
+			return nil, fmt.Errorf("%w at entry %d (%s)", ErrNegativeAmount, i, e.AccountID)
+		}
+		if baseCurrency == "" {
+			baseCurrency = e.Currency
+		} else if e.Currency != baseCurrency {
+			return nil, fmt.Errorf("ledger: multi-currency transactions must be converted before posting (got %s, expected %s)", e.Currency, baseCurrency)
+		}
+
+		switch e.Type {
+		case EntryDebit:
+			totalDebit = totalDebit.Add(e.Amount)
+		case EntryCredit:
+			totalCredit = totalCredit.Add(e.Amount)
+		default:
+			return nil, fmt.Errorf("ledger: invalid entry type %s", e.Type)
+		}
+	}
+
+	if !totalDebit.Equal(totalCredit) {
+		return nil, fmt.Errorf("%w: debit=%s credit=%s delta=%s", ErrUnbalancedTransaction, totalDebit.String(), totalCredit.String(), totalDebit.Sub(totalCredit).String())
+	}
+
+	return &Transaction{
+		ID:          id,
+		ReferenceID: refID,
+		Description: desc,
+		Entries:     entries,
+		PostedAt:    time.Now().UTC(),
+	}, nil
+}
