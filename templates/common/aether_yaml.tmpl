@@ -1,0 +1,47 @@
+version: "1"
+project:
+  name: "{{ .ProjectName }}"
+  module: "{{ .PackagePath }}"
+  go_version: "{{ .GoVersion }}"
+  created_at: "{{ .Timestamp }}"
+  aether_version: "{{ .AetherVersion }}"
+architecture:
+  pattern: "{{ .ArchPattern }}"
+  mode: "greenfield"
+  paths:
+    domain: "internal/core/domain"
+    port: "internal/core/port"
+    service: "internal/core/service"
+    handler_http: "internal/adapter/handler/http"
+    repository: "internal/adapter/repository"
+    cmd: "cmd/server"
+    config: "internal/config"
+    pkg: "pkg"
+stack:
+  router: "{{ .Router }}"
+  database:
+    driver: "{{ .DBDriver }}"
+    orm: "sqlc"
+    pool: "pgxpool"
+  cache: "none"
+  transport:
+    - "http"
+  auth: "none"
+  logger: "slog-otel"
+adapters:
+  existing_db_var: ""
+  existing_redis_var: ""
+  existing_logger_var: ""
+modules: []
+workers: []
+migrations:
+  tool: "goose"
+  dir: "migrations/"
+lint:
+  enabled: true
+  config: ".golangci.yml"
+test:
+  coverage_threshold: 80
+meta:
+  anomaly_mode: false
+  legacy_notes: ""
