@@ -1,0 +1,74 @@
+package s3
+
+import (
+	"context"
+	"fmt"
+	"io"
+	"time"
+
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+)
+
+// Client wraps S3-compatible object storage operations (MinIO / AWS S3).
+type Client struct {
+	client *minio.Client
+	bucket string
+}
+
+// Config binds S3 connection options.
+type Config struct {
+	Endpoint        string
+	AccessKeyID     string
+	SecretAccessKey string
+	UseSSL          bool
+	Bucket          string
+}
+
+// NewClient instantiates an S3 storage client and ensures bucket presence.
+func NewClient(ctx context.Context, cfg Config) (*Client, error) {
+	client, err := minio.New(cfg.Endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(cfg.AccessKeyID, cfg.SecretAccessKey, ""),
+		Secure: cfg.UseSSL,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("s3: failed to initialize client: %w", err)
+	}
+
+	exists, err := client.BucketExists(ctx, cfg.Bucket)
+	if err != nil {
+		return nil, fmt.Errorf("s3: bucket check failed: %w", err)
+	}
+	if !exists {
+		err = client.MakeBucket(ctx, cfg.Bucket, minio.MakeBucketOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("s3: failed to create bucket: %w", err)
+		}
+	}
+
+	return &Client{
+		client: client,
+		bucket: cfg.Bucket,
+	}, nil
+}
+
+// PutObject uploads a stream with content-type to the target S3 bucket.
+func (c *Client) PutObject(ctx context.Context, objectName string, reader io.Reader, size int64, contentType string) (minio.UploadInfo, error) {
+	return c.client.PutObject(ctx, c.bucket, objectName, reader, size, minio.PutObjectOptions{
+		ContentType: contentType,
+	})
+}
+
+// GetPreSignedURL generates a time-limited secure download URL for an object.
+func (c *Client) GetPreSignedURL(ctx context.Context, objectName string, expiry time.Duration) (string, error) {
+	u, err := c.client.PresignedGetObject(ctx, c.bucket, objectName, expiry, nil)
+	if err != nil {
+		return "", err
+	}
+	return u.String(), nil
+}
+
+// DeleteObject removes an object key from the storage bucket.
+func (c *Client) DeleteObject(ctx context.Context, objectName string) error {
+	return c.client.RemoveObject(ctx, c.bucket, objectName, minio.RemoveObjectOptions{})
+}

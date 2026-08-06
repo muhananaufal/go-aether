@@ -1,0 +1,61 @@
+package bloom
+
+import (
+	"hash/fnv"
+	"math"
+	"sync"
+)
+
+// BloomFilter is a probabilistic data structure for set membership testing.
+type BloomFilter struct {
+	bitset []bool
+	size   uint
+	k      uint
+	mu     sync.RWMutex
+}
+
+// NewBloomFilter instantiates an optimal Bloom Filter given capacity and false positive probability.
+func NewBloomFilter(expectedElements uint, falsePositiveProb float64) *BloomFilter {
+	// m = - (n * ln(p)) / (ln(2)^2)
+	m := uint(math.Ceil(-float64(expectedElements) * math.Log(falsePositiveProb) / math.Pow(math.Log(2), 2)))
+	// k = (m / n) * ln(2)
+	k := uint(math.Ceil((float64(m) / float64(expectedElements)) * math.Log(2)))
+
+	return &BloomFilter{
+		bitset: make([]bool, m),
+		size:   m,
+		k:      k,
+	}
+}
+
+// Add inserts an element key into the Bloom Filter.
+func (bf *BloomFilter) Add(data string) {
+	bf.mu.Lock()
+	defer bf.mu.Unlock()
+
+	for i := uint(0); i < bf.k; i++ {
+		idx := bf.hash(data, i) % bf.size
+		bf.bitset[idx] = true
+	}
+}
+
+// Test checks whether an element key might be in the set (true) or is definitely not in the set (false).
+func (bf *BloomFilter) Test(data string) bool {
+	bf.mu.RLock()
+	defer bf.mu.RUnlock()
+
+	for i := uint(0); i < bf.k; i++ {
+		idx := bf.hash(data, i) % bf.size
+		if !bf.bitset[idx] {
+			return false
+		}
+	}
+	return true
+}
+
+func (bf *BloomFilter) hash(data string, seed uint) uint {
+	h := fnv.New64a()
+	h.Write([]byte(data))
+	h.Write([]byte{byte(seed), byte(seed >> 8), byte(seed >> 16), byte(seed >> 24)})
+	return uint(h.Sum64())
+}

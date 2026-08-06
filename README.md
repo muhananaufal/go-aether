@@ -90,7 +90,7 @@ go-aether doctor
 
 ---
 
-## 🗺️ Complete CLI Command Taxonomy (v0.8.5)
+## 🗺️ Complete CLI Command Taxonomy (v0.8.6)
 
 ### 🔨 Core Generators & Tactical DDD (`make:*`, `init`, `ls`)
 | Command | Description | Example |
@@ -110,6 +110,15 @@ go-aether doctor
 | `make:query [name]` | Generate CQRS Query DTO & read-model handler | `go-aether make:query get_order_by_id` |
 | `make:migration [name]` | Generate SQL migration pair (Goose / Golang-Migrate) | `go-aether make:migration add_users` |
 | `make:seeder [name]` | Generate database dummy data seeder | `go-aether make:seeder initial_users` |
+
+### ⚡ High-Performance Caching & Storage Engine (`add:*`)
+| Command | Description | Example |
+| :--- | :--- | :--- |
+| `add:multilevelcache` | Synchronized L1 (In-Memory) + L2 (Redis) Cache with Pub/Sub invalidation | `go-aether add:multilevelcache` |
+| `add:bloomfilter` | Probabilistic Bloom Filter cache penetration guard | `go-aether add:bloomfilter` |
+| `add:s3 [provider]` | S3 object storage client with pre-signed URL generator (MinIO / AWS) | `go-aether add:s3 minio` |
+| `add:resilience [provider]` | Circuit Breaker & Bulkhead concurrency limiter (Hystrix / Resilience4go) | `go-aether add:resilience resilience4go` |
+| `add:search [provider]` | Fast typo-tolerant full-text search client (Meilisearch / Elasticsearch) | `go-aether add:search meilisearch` |
 
 ### 📡 Realtime, WebSockets & Communication (`add:*`)
 | Command | Description | Example |

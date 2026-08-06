@@ -88,6 +88,11 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newAddWebRTCCommand(svc, &flags))
 	rootCmd.AddCommand(newAddMQTTCommand(svc, &flags))
 	rootCmd.AddCommand(newAddTwilioCommand(svc, &flags))
+	rootCmd.AddCommand(newAddMultiLevelCacheCommand(svc, &flags))
+	rootCmd.AddCommand(newAddBloomFilterCommand(svc, &flags))
+	rootCmd.AddCommand(newAddS3Command(svc, &flags))
+	rootCmd.AddCommand(newAddResilienceCommand(svc, &flags))
+	rootCmd.AddCommand(newAddSearchCommand(svc, &flags))
 
 	return rootCmd
 }
