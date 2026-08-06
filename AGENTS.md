@@ -46,3 +46,8 @@ We use a **Domain-First** taxonomy for all commands. **DO NOT** use verb-first (
 - Run `go build -o bin/aether.exe .` to compile the binary.
 - Use `git add .` and `git commit -m "feat/fix(scope): message"` following Conventional Commits.
 - Always include the Co-Authored-By trailer for AETHERIS: `Co-authored-by: aetheris <agents.aetheris@gmail.com>`.
+
+## 5. Versioning & Release Philosophy
+go-aether uses Semantic Versioning (SemVer) with a "Slow Incremental" philosophy.
+- **Do NOT hardcode versions**: The version string must never be hardcoded in Go files. It is injected dynamically at build time via GoReleaser ldflags (e.g., -X main.version=...).
+- **Patience with v0.x.x**: The project will deliberately remain in 0.x.x until it achieves absolute maturity. Agents should NOT suggest or rush a bump to 1.0.0. Incremental feature updates should bump the minor version (e.g., 0.2.0, 0.10.0) and bug fixes should bump the patch version (e.g., 0.1.1).
