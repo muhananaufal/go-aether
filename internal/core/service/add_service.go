@@ -17,6 +17,17 @@ func (s *AetherScaffoldService) AddMiddleware(ctx context.Context, startDir, mod
 		return fmt.Errorf("failed to locate aether.yaml: %w", err)
 	}
 
+	// The middleware templates below are written against chi's
+	// func(http.Handler) http.Handler signature. gin, echo and fiber each use a
+	// different one, so injecting these into a non-chi project would produce code
+	// that does not type-check. Refusing is the honest answer until router-aware
+	// middleware templates exist; silently emitting chi middleware is how the
+	// router flag came to be ignored everywhere else.
+	if router := strings.ToLower(manifest.Stack.Router); router != "" && router != "chi" {
+		return fmt.Errorf("%w: middleware injection currently supports chi only, project uses %q",
+			domain.ErrUnsupportedStack, router)
+	}
+
 	projectRoot := filepath.Dir(manifestPath)
 	handlerFile := filepath.Join(projectRoot, manifest.Architecture.Paths.HandlerHTTP, fmt.Sprintf("%s_handler.go", strings.ToLower(moduleName)))
 

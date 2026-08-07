@@ -43,6 +43,14 @@ func detectGoVersion() string {
 
 // InitProject bootstraps a new greenfield project architecture and saves the SSOT manifest.
 func (s *AetherScaffoldService) InitProject(ctx context.Context, destDir, projectName, moduleName, arch, dbDriver, router string, dryRun bool) error {
+	// Validated before anything is created. An unsupported selection used to pass
+	// straight through and yield a chi + Postgres project no matter what the user
+	// asked for; failing here leaves the target directory untouched.
+	arch, dbDriver, router = domain.NormalizeStack(arch, dbDriver, router)
+	if err := domain.ValidateStackSelection(arch, dbDriver, router); err != nil {
+		return err
+	}
+
 	manifest := domain.NewDefaultManifest(projectName, moduleName, detectGoVersion(), arch, dbDriver, router)
 
 	if err := manifest.Validate(); err != nil {
@@ -93,7 +101,7 @@ func (s *AetherScaffoldService) InitProject(ctx context.Context, destDir, projec
 	// Rendered through a transaction so a failure midway leaves no half-written
 	// skeleton behind, matching the guarantee every other generator already gives.
 	tx := s.fs.BeginTransaction()
-	for _, spec := range skeletonFiles() {
+	for _, spec := range skeletonFiles(router, dbDriver) {
 		outPath := filepath.Join(destDir, spec.dest)
 		content, err := s.engine.Render(ctx, spec.template, templateData)
 		if err != nil {
@@ -124,16 +132,34 @@ type skeletonSpec struct {
 	dest     string
 }
 
-func skeletonFiles() []skeletonSpec {
-	return []skeletonSpec{
-		{"common/main.go.tmpl", filepath.Join("cmd", "server", "main.go")},
+// skeletonFiles resolves the concrete template set for a stack selection.
+//
+// The router and driver are part of the template *name* rather than a branch
+// inside one giant template. Five routers expressed as nested conditionals in a
+// single file becomes unreadable long before the fifth is added, and a syntax
+// error in one branch breaks every other branch with it.
+func skeletonFiles(router, dbDriver string) []skeletonSpec {
+	specs := []skeletonSpec{
+		{fmt.Sprintf("common/main_%s.go.tmpl", router), filepath.Join("cmd", "server", "main.go")},
 		{"common/config_viper.go.tmpl", filepath.Join("pkg", "config", "config.go")},
-		{"common/postgres.go.tmpl", filepath.Join("pkg", "database", "postgres.go")},
-		{"common/Makefile.tmpl", "Makefile"},
-		{"common/Dockerfile.tmpl", "Dockerfile"},
-		{"common/dockerignore.tmpl", ".dockerignore"},
-		{"common/env_example.tmpl", ".env.example"},
 	}
+
+	// "none" means the service genuinely has no datastore, so emitting a
+	// connection pool that nothing calls would be noise the reader has to
+	// understand and then delete.
+	if domain.HasDatabase(dbDriver) {
+		specs = append(specs, skeletonSpec{
+			template: fmt.Sprintf("common/db_%s.go.tmpl", dbDriver),
+			dest:     filepath.Join("pkg", "database", "db.go"),
+		})
+	}
+
+	return append(specs,
+		skeletonSpec{"common/Makefile.tmpl", "Makefile"},
+		skeletonSpec{"common/Dockerfile.tmpl", "Dockerfile"},
+		skeletonSpec{"common/dockerignore.tmpl", ".dockerignore"},
+		skeletonSpec{"common/env_example.tmpl", ".env.example"},
+	)
 }
 
 // ensureGoModule creates go.mod unless the directory already is a module.

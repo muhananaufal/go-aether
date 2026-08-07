@@ -27,6 +27,33 @@ func NewAetherScaffoldService(engine port.TemplateEngine, resolver port.Manifest
 	}
 }
 
+// layerTemplate resolves the embedded template for one layer of a vertical slice.
+//
+// Two layers vary with the project's stack. The HTTP handler is router-specific
+// because chi, gin, echo, fiber and net/http share no handler signature; the
+// repository is driver-specific because upsert syntax and the "no rows" sentinel
+// differ per database. Expressing that as separate templates rather than
+// branches inside one file keeps each readable and stops a syntax error in one
+// dialect from breaking the others.
+func layerTemplate(archPrefix, layer string, manifest *domain.AetherManifest) string {
+	switch layer {
+	case "handler_http":
+		router := manifest.Stack.Router
+		if router == "" {
+			router = domain.DefaultRouter
+		}
+		return fmt.Sprintf("%s/handler_http_%s.go.tmpl", archPrefix, strings.ToLower(router))
+	case "repository":
+		driver := manifest.Stack.Database.Driver
+		if driver == "" {
+			driver = domain.DefaultDBDriver
+		}
+		return fmt.Sprintf("%s/repository_%s.go.tmpl", archPrefix, strings.ToLower(driver))
+	default:
+		return fmt.Sprintf("%s/%s.go.tmpl", archPrefix, layer)
+	}
+}
+
 // MakeModule generates all vertical slice components for a new module feature.
 func (s *AetherScaffoldService) MakeModule(ctx context.Context, startDir, moduleName string, transports []string, hasCache, hasWorker, dryRun, force bool) error {
 	manifest, manifestPath, err := s.resolver.Resolve(ctx, startDir)
@@ -48,37 +75,33 @@ func (s *AetherScaffoldService) MakeModule(ctx context.Context, startDir, module
 	projectRoot := filepath.Dir(manifestPath)
 	archPrefix := manifest.Architecture.Pattern
 
-	// Define mapping of target layers to templates
-	layers := map[string]string{
-		"domain":       manifest.Architecture.Paths.Domain,
-		"port":         manifest.Architecture.Paths.Port,
-		"service":      manifest.Architecture.Paths.Service,
-		"handler_http": manifest.Architecture.Paths.HandlerHTTP,
-		"repository":   manifest.Architecture.Paths.Repository,
+	// A slice, not a map: map iteration order is randomised, so a failure in one
+	// layer would be reported before or after the others at random, and partial
+	// output would differ between runs.
+	layers := []struct{ name, relPath string }{
+		{"domain", manifest.Architecture.Paths.Domain},
+		{"port", manifest.Architecture.Paths.Port},
+		{"service", manifest.Architecture.Paths.Service},
+		{"handler_http", manifest.Architecture.Paths.HandlerHTTP},
+		{"repository", manifest.Architecture.Paths.Repository},
 	}
 
-	for layer, relPath := range layers {
-		// e.g. "hexagonal/service.go.tmpl"
-		tmplName := fmt.Sprintf("%s/%s", archPrefix, layer)
-		if layer == "repository" {
-			tmplName += fmt.Sprintf("_%s.go.tmpl", manifest.Stack.Database.Driver)
-		} else {
-			tmplName += ".go.tmpl"
-		}
-
-		content, err := s.engine.Render(ctx, tmplName, data)
+	for _, layer := range layers {
+		content, err := s.engine.Render(ctx, layerTemplate(archPrefix, layer.name, manifest), data)
 		if err != nil {
 			return err
 		}
 
 		// e.g. "internal/core/service/order_service.go"
-		fileName := fmt.Sprintf("%s_%s.go", strings.ToLower(moduleName), strings.Split(layer, "_")[0])
-		if layer == "domain" {
+		fileName := fmt.Sprintf("%s_%s.go", strings.ToLower(moduleName), strings.Split(layer.name, "_")[0])
+		if layer.name == "domain" {
 			fileName = fmt.Sprintf("%s.go", strings.ToLower(moduleName))
 		}
 
-		destFile := filepath.Join(projectRoot, relPath, fileName)
-		tx.WriteFile(ctx, destFile, content, force, dryRun)
+		destFile := filepath.Join(projectRoot, layer.relPath, fileName)
+		if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+			return err
+		}
 	}
 
 	// Update manifest
@@ -149,6 +172,9 @@ func (s *AetherScaffoldService) MakeHandler(ctx context.Context, startDir, modul
 	archPrefix := manifest.Architecture.Pattern
 
 	tmplName := fmt.Sprintf("%s/handler_%s.go.tmpl", archPrefix, transport)
+	if transport == "http" {
+		tmplName = layerTemplate(archPrefix, "handler_http", manifest)
+	}
 	content, err := s.engine.Render(ctx, tmplName, data)
 	if err != nil {
 		return err
