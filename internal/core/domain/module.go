@@ -24,6 +24,24 @@ var stdlibReservedWords = map[string]struct{}{
 	"unsafe": {}, "main": {}, "init": {}, "common": {}, "util": {}, "utils": {},
 }
 
+// windowsReservedDeviceNames lists the Win32 device names that cannot be used as
+// a filename stem, even with an extension: "con.go" resolves to the CON console
+// device, not to a file.
+//
+// The failure mode this prevents is the worst kind. Writing succeeds, the CLI
+// reports success, and the content vanishes into the device — leaving a project
+// that references a source file which does not exist.
+//
+// Enforced on every operating system rather than only on Windows, so a module
+// generated on Linux never becomes un-checkoutable for a teammate on Windows.
+var windowsReservedDeviceNames = map[string]struct{}{
+	"con": {}, "prn": {}, "aux": {}, "nul": {},
+	"com0": {}, "com1": {}, "com2": {}, "com3": {}, "com4": {},
+	"com5": {}, "com6": {}, "com7": {}, "com8": {}, "com9": {},
+	"lpt0": {}, "lpt1": {}, "lpt2": {}, "lpt3": {}, "lpt4": {},
+	"lpt5": {}, "lpt6": {}, "lpt7": {}, "lpt8": {}, "lpt9": {},
+}
+
 // TemplateData represents the unified context passed into every text/template during generation.
 type TemplateData struct {
 	// Module and package branding
@@ -69,8 +87,13 @@ func ValidateGoIdentifier(name string) error {
 	if !validGoPackageRegex.MatchString(cleaned) {
 		return fmt.Errorf("%w: %q (must start with letter and contain only lowercase letters, digits, or underscores)", ErrInvalidIdentifier, cleaned)
 	}
-	if _, isReserved := stdlibReservedWords[strings.ToLower(cleaned)]; isReserved {
+	lowered := strings.ToLower(cleaned)
+	if _, isReserved := stdlibReservedWords[lowered]; isReserved {
 		return fmt.Errorf("%w: %q is a reserved Go standard library package or forbidden word", ErrStdlibCollision, cleaned)
+	}
+	if _, isDevice := windowsReservedDeviceNames[lowered]; isDevice {
+		return fmt.Errorf("%w: %q maps to a Windows device (writes are silently discarded); try %q instead",
+			ErrReservedName, cleaned, cleaned+"_module")
 	}
 	return nil
 }
