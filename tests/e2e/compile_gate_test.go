@@ -56,11 +56,19 @@ func requireGoToolchain(t *testing.T) string {
 // are worthless without it.
 func runInDir(t *testing.T, dir, name string, args ...string) (string, error) {
 	t.Helper()
+	return runInDirWithEnv(t, dir, nil, name, args...)
+}
+
+// runInDirWithEnv is runInDir with additional environment entries appended, used
+// to reproduce the exact conditions of the generated Dockerfile build.
+func runInDirWithEnv(t *testing.T, dir string, extraEnv []string, name string, args ...string) (string, error) {
+	t.Helper()
 	cmd := exec.Command(name, args...)
 	cmd.Dir = dir
 	// GOFLAGS is cleared so a developer's ambient -mod=vendor does not silently
 	// change what this gate measures.
 	cmd.Env = append(os.Environ(), "GOFLAGS=")
+	cmd.Env = append(cmd.Env, extraEnv...)
 	out, err := cmd.CombinedOutput()
 	return string(out), err
 }
