@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [0.4.0] — unreleased
+## [0.4.0] — 2026-08-07
 
 The release that made the tool's own claims verifiable.
 
@@ -146,9 +146,6 @@ for the full design and the anomaly matrix.
 
 Stated rather than rounded up:
 
-- `-race`, `golangci-lint` and `govulncheck` are enforced in CI but have not yet
-  run: this work was done on a machine without cgo, and the branch is not pushed.
-  Local verification was `go test`, `go vet`, `gofmt` and `goimports`.
 - `api:middleware` refuses non-chi projects. Its templates carry chi's
   middleware signature; router-aware middleware is not implemented.
 - The `--vertical` escape hatch for unrecognisable legacy layouts does not exist.
