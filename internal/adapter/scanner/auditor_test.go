@@ -152,6 +152,49 @@ func Load() error {
 	}
 }
 
+// TestGoCodeAuditor_IgnoresMentionsInCommentsAndStrings probes the weakest part
+// of these rules: they match source text, not syntax.
+//
+// A comment explaining why not to panic, or a string containing the word, is not
+// a call. Flagging either would make the auditor untrustworthy in exactly the
+// codebases that document their reasoning most carefully.
+func TestGoCodeAuditor_IgnoresMentionsInCommentsAndStrings(t *testing.T) {
+	root := writeTree(t, map[string]string{
+		".gitignore":    ".env\n",
+		".golangci.yml": "linters:\n",
+		"internal/svc/safe.go": `package svc
+
+// Deliberately never panic( here: return an error to the caller instead.
+const advice = "do not call panic( inside a library package"
+
+func Safe() error {
+	_ = advice
+	return nil
+}
+`,
+		"internal/svc/safe_test.go": `package svc
+
+import "testing"
+
+func TestSafe(t *testing.T) {
+	if err := Safe(); err != nil {
+		t.Fatal(err)
+	}
+}
+`,
+	})
+
+	report, err := scanner.NewGoCodeAuditor().Audit(context.Background(), root)
+	if err != nil {
+		t.Fatalf("Audit failed: %v", err)
+	}
+
+	if finding, fired := findingsByRule(report)["reliability/panic-in-library"]; fired {
+		t.Errorf("panic-in-library fired on a comment and a string literal (%s); "+
+			"the rule matches source text rather than syntax", finding.File)
+	}
+}
+
 func TestGoCodeAuditor_CleanProjectReportsNothing(t *testing.T) {
 	root := writeTree(t, map[string]string{
 		".gitignore":    ".env\n",
