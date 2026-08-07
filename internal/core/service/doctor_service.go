@@ -36,13 +36,13 @@ func (s *AetherScaffoldService) RunDoctor(ctx context.Context, startDir string, 
 	for _, mod := range manifest.Modules {
 		domainPath := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fmt.Sprintf("%s.go", strings.ToLower(mod.Name)))
 		exists, err := s.fs.Exists(domainPath)
-		
+
 		status := "✅"
 		if err != nil || !exists {
 			status = "❌ (MISSING FILE)"
 			corruptCount++
 		}
-		
+
 		_, _ = fmt.Fprintf(out, "   %s Module [%s]: Transports=%v, Cache=%t\n", status, mod.Name, mod.Transports, mod.HasCache)
 		if status != "✅" {
 			_, _ = fmt.Fprintf(out, "      -> Expected physical file not found: %s\n", domainPath)

@@ -42,7 +42,7 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 			if !cmd.Flags().Changed("architecture") && cfg.Preferences.Architecture != "" && cmd.Flags().Lookup("architecture") != nil {
 				_ = cmd.Flags().Set("architecture", cfg.Preferences.Architecture)
 			}
-			
+
 			// Try to acquire the project lock for safety, unless it's a read-only command like ls or doctor
 			if cmd.Name() != "ls" && cmd.Name() != "doctor" && cmd.Name() != "adopt" && cmd.Name() != "init" {
 				cwd, _ := os.Getwd()

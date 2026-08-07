@@ -52,7 +52,7 @@ func acquireProjectLock(ctx context.Context, startDir string) error {
 		// Wait up to 10 seconds for the lock
 		waitCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
-		
+
 		locked, err = globalFileLock.TryLockContext(waitCtx, 500*time.Millisecond)
 		if err != nil || !locked {
 			return fmt.Errorf("timeout waiting for project lock at %s. Ensure no other go-aether process is stuck", lockPath)
