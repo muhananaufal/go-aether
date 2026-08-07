@@ -22,6 +22,13 @@ func TestAetherScaffoldService_E2E_InitAndMakeModule(t *testing.T) {
 	// Mock embedded templates matching real layout
 	mockEmbed := fstest.MapFS{
 		"common/aether_yaml.tmpl":               &fstest.MapFile{Data: []byte("version: \"1\"")},
+		"common/main.go.tmpl":                   &fstest.MapFile{Data: []byte("package main")},
+		"common/config_viper.go.tmpl":           &fstest.MapFile{Data: []byte("package config")},
+		"common/postgres.go.tmpl":               &fstest.MapFile{Data: []byte("package database")},
+		"common/Makefile.tmpl":                  &fstest.MapFile{Data: []byte("build:")},
+		"common/Dockerfile.tmpl":                &fstest.MapFile{Data: []byte("FROM alpine")},
+		"common/dockerignore.tmpl":              &fstest.MapFile{Data: []byte("bin/")},
+		"common/env_example.tmpl":               &fstest.MapFile{Data: []byte("APP_ENV=")},
 		"hexagonal/domain.go.tmpl":              &fstest.MapFile{Data: []byte("package domain\n// domain for {{ .ModuleNameTitle }}")},
 		"hexagonal/port.go.tmpl":                &fstest.MapFile{Data: []byte("package port\n// port for {{ .ModuleNameTitle }}")},
 		"hexagonal/service.go.tmpl":             &fstest.MapFile{Data: []byte("package service\n// service for {{ .ModuleNameTitle }}")},
@@ -85,6 +92,13 @@ func TestAetherScaffoldService_Phase13_TestingAndQASuite(t *testing.T) {
 
 	mockEmbed := fstest.MapFS{
 		"common/aether_yaml.tmpl":             &fstest.MapFile{Data: []byte("version: \"1\"")},
+		"common/main.go.tmpl":                   &fstest.MapFile{Data: []byte("package main")},
+		"common/config_viper.go.tmpl":           &fstest.MapFile{Data: []byte("package config")},
+		"common/postgres.go.tmpl":               &fstest.MapFile{Data: []byte("package database")},
+		"common/Makefile.tmpl":                  &fstest.MapFile{Data: []byte("build:")},
+		"common/Dockerfile.tmpl":                &fstest.MapFile{Data: []byte("FROM alpine")},
+		"common/dockerignore.tmpl":              &fstest.MapFile{Data: []byte("bin/")},
+		"common/env_example.tmpl":               &fstest.MapFile{Data: []byte("APP_ENV=")},
 		"plugins/stress_k6.js.tmpl":           &fstest.MapFile{Data: []byte("// k6 stress test for {{ .ModuleName }}")},
 		"plugins/stress_vegeta.sh.tmpl":       &fstest.MapFile{Data: []byte("# vegeta stress test for {{ .ModuleNameTitle }}")},
 		"plugins/chaos.go.tmpl":               &fstest.MapFile{Data: []byte("package middleware\n// chaos middleware")},
@@ -184,6 +198,13 @@ func TestAetherScaffoldService_Phase14_SQLC_GRPC_MultiTenancy(t *testing.T) {
 
 	mockEmbed := fstest.MapFS{
 		"common/aether_yaml.tmpl":        &fstest.MapFile{Data: []byte("version: \"1\"")},
+		"common/main.go.tmpl":                   &fstest.MapFile{Data: []byte("package main")},
+		"common/config_viper.go.tmpl":           &fstest.MapFile{Data: []byte("package config")},
+		"common/postgres.go.tmpl":               &fstest.MapFile{Data: []byte("package database")},
+		"common/Makefile.tmpl":                  &fstest.MapFile{Data: []byte("build:")},
+		"common/Dockerfile.tmpl":                &fstest.MapFile{Data: []byte("FROM alpine")},
+		"common/dockerignore.tmpl":              &fstest.MapFile{Data: []byte("bin/")},
+		"common/env_example.tmpl":               &fstest.MapFile{Data: []byte("APP_ENV=")},
 		"plugins/sqlc_yaml.tmpl":         &fstest.MapFile{Data: []byte("version: \"2\"")},
 		"plugins/sqlc_schema.sql.tmpl":   &fstest.MapFile{Data: []byte("CREATE TABLE accounts ();")},
 		"plugins/sqlc_query.sql.tmpl":    &fstest.MapFile{Data: []byte("-- name: GetAccountByID :one\nSELECT 1;")},
@@ -259,6 +280,13 @@ func TestAetherScaffoldService_Phase15_Concurrency_ZeroTrust(t *testing.T) {
 
 	mockEmbed := fstest.MapFS{
 		"common/aether_yaml.tmpl":       &fstest.MapFile{Data: []byte("version: \"1\"\narchitecture:\n  paths:\n    domain: internal/core/domain\n    port: internal/core/port\n    service: internal/core/service\n    handler_http: internal/adapter/handler/http\n    repository: internal/adapter/repository\n    cmd: cmd/server\n    pkg: pkg")},
+		"common/main.go.tmpl":                   &fstest.MapFile{Data: []byte("package main")},
+		"common/config_viper.go.tmpl":           &fstest.MapFile{Data: []byte("package config")},
+		"common/postgres.go.tmpl":               &fstest.MapFile{Data: []byte("package database")},
+		"common/Makefile.tmpl":                  &fstest.MapFile{Data: []byte("build:")},
+		"common/Dockerfile.tmpl":                &fstest.MapFile{Data: []byte("FROM alpine")},
+		"common/dockerignore.tmpl":              &fstest.MapFile{Data: []byte("bin/")},
+		"common/env_example.tmpl":               &fstest.MapFile{Data: []byte("APP_ENV=")},
 		"plugins/pipeline.go.tmpl":      &fstest.MapFile{Data: []byte("package concurrency\n// pipeline")},
 		"plugins/singleflight.go.tmpl":  &fstest.MapFile{Data: []byte("package concurrency\n// singleflight")},
 		"plugins/metrics.go.tmpl":       &fstest.MapFile{Data: []byte("package middleware\n// metrics")},
@@ -314,6 +342,13 @@ func TestAetherScaffoldService_Phase16_FinalGap(t *testing.T) {
 
 	mockEmbed := fstest.MapFS{
 		"common/aether_yaml.tmpl":          &fstest.MapFile{Data: []byte("version: \"1\"\narchitecture:\n  paths:\n    domain: internal/core/domain\n    port: internal/core/port\n    service: internal/core/service\n    handler_http: internal/adapter/handler/http\n    repository: internal/adapter/repository\n    cmd: cmd/server\n    pkg: pkg")},
+		"common/main.go.tmpl":                   &fstest.MapFile{Data: []byte("package main")},
+		"common/config_viper.go.tmpl":           &fstest.MapFile{Data: []byte("package config")},
+		"common/postgres.go.tmpl":               &fstest.MapFile{Data: []byte("package database")},
+		"common/Makefile.tmpl":                  &fstest.MapFile{Data: []byte("build:")},
+		"common/Dockerfile.tmpl":                &fstest.MapFile{Data: []byte("FROM alpine")},
+		"common/dockerignore.tmpl":              &fstest.MapFile{Data: []byte("bin/")},
+		"common/env_example.tmpl":               &fstest.MapFile{Data: []byte("APP_ENV=")},
 		"plugins/lint.yml.tmpl":            &fstest.MapFile{Data: []byte("lint")},
 		"plugins/uow.go.tmpl":              &fstest.MapFile{Data: []byte("package uow")},
 		"plugins/graphql.go.tmpl":          &fstest.MapFile{Data: []byte("package graphql")},

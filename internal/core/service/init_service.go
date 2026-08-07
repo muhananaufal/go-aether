@@ -50,6 +50,34 @@ func (s *AetherScaffoldService) InitProject(ctx context.Context, destDir, projec
 				return fmt.Errorf("failed to run go mod tidy: %s (%w)", string(out), err)
 			}
 		}
+
+		// Prepare template data
+		templateData := &domain.TemplateData{
+			ModuleName:      moduleName,
+			ModuleNameTitle: projectName,
+		}
+
+		// Render the Executable Skeleton templates
+		filesToRender := map[string]string{
+			"common/main.go.tmpl":         "cmd/server/main.go",
+			"common/config_viper.go.tmpl": "pkg/config/config.go",
+			"common/postgres.go.tmpl":     "pkg/database/postgres.go",
+			"common/Makefile.tmpl":        "Makefile",
+			"common/Dockerfile.tmpl":      "Dockerfile",
+			"common/dockerignore.tmpl":    ".dockerignore",
+			"common/env_example.tmpl":     ".env.example",
+		}
+
+		for tmplPath, relOutPath := range filesToRender {
+			outPath := filepath.Join(destDir, relOutPath)
+			content, err := s.engine.Render(ctx, tmplPath, templateData)
+			if err != nil {
+				return fmt.Errorf("failed to render %s: %w", outPath, err)
+			}
+			if err := s.fs.WriteFile(ctx, outPath, content, dryRun, false); err != nil {
+				return fmt.Errorf("failed to write %s: %w", outPath, err)
+			}
+		}
 	}
 
 	return nil
