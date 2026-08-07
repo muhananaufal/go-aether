@@ -74,7 +74,7 @@ func (s *AetherScaffoldService) AdoptProject(ctx context.Context, destDir string
 	if err := s.resolver.Save(ctx, destDir, manifest, s.fs); err != nil {
 		return fmt.Errorf("failed saving adopted manifest: %w", err)
 	}
-	fmt.Fprintf(out, "\n✅ Wrote %s\n", filepath.ToSlash(manifestPath))
+	_, _ = fmt.Fprintf(out, "\n✅ Wrote %s\n", filepath.ToSlash(manifestPath))
 	return nil
 }
 
@@ -120,7 +120,7 @@ func (s *AetherScaffoldService) scanLayout(
 		time.Now().Format(time.RFC3339), report.FilesSeen, confidence*100)
 
 	if report.Truncated {
-		fmt.Fprintf(out, "\n⚠️  Scan stopped at the %d file limit; deeper directories were not inspected.\n",
+		_, _ = fmt.Fprintf(out, "\n⚠️  Scan stopped at the %d file limit; deeper directories were not inspected.\n",
 			report.FilesSeen)
 	}
 
@@ -150,7 +150,7 @@ func (s *AetherScaffoldService) applyBYODetection(
 	manifest.Adapters.ExistingRedisVar = detection.RedisVar
 	manifest.Adapters.ExistingLoggerVar = detection.LoggerVar
 
-	fmt.Fprintf(out, "\n🔌 Reusable clients found in your entrypoint:\n")
+	_, _ = fmt.Fprintf(out, "\n🔌 Reusable clients found in your entrypoint:\n")
 	for _, pair := range []struct{ label, name string }{
 		{"database", detection.DBVar},
 		{"redis", detection.RedisVar},
@@ -159,9 +159,9 @@ func (s *AetherScaffoldService) applyBYODetection(
 		if pair.name == "" {
 			continue
 		}
-		fmt.Fprintf(out, "   • %-9s %-14s %s\n", pair.label, pair.name, detection.Sources[pair.name])
+		_, _ = fmt.Fprintf(out, "   • %-9s %-14s %s\n", pair.label, pair.name, detection.Sources[pair.name])
 	}
-	fmt.Fprintf(out, "   Generated constructors will ask for these instead of opening their own.\n")
+	_, _ = fmt.Fprintf(out, "   Generated constructors will ask for these instead of opening their own.\n")
 }
 
 // printAdoptionPlan renders the proposal. It always runs, including on a real
@@ -173,15 +173,15 @@ func (s *AetherScaffoldService) printAdoptionPlan(
 	report *domain.LayoutReport,
 	dryRun bool,
 ) {
-	fmt.Fprintf(out, "\n🔍 Adoption plan for %s\n", filepath.ToSlash(destDir))
-	fmt.Fprintf(out, "   module: %s\n", manifest.Project.Module)
+	_, _ = fmt.Fprintf(out, "\n🔍 Adoption plan for %s\n", filepath.ToSlash(destDir))
+	_, _ = fmt.Fprintf(out, "   module: %s\n", manifest.Project.Module)
 
 	if report != nil {
-		fmt.Fprintf(out, "   scanned: %d Go files, layout confidence %.0f%%\n",
+		_, _ = fmt.Fprintf(out, "   scanned: %d Go files, layout confidence %.0f%%\n",
 			report.FilesSeen, report.Confidence()*100)
 	}
 
-	fmt.Fprintf(out, "\n   Proposed layer mapping:\n")
+	_, _ = fmt.Fprintf(out, "\n   Proposed layer mapping:\n")
 	rows := []struct {
 		label string
 		kind  domain.LayoutKind
@@ -199,16 +199,16 @@ func (s *AetherScaffoldService) printAdoptionPlan(
 				evidence = strings.Join(best.Evidence, "; ")
 			}
 		}
-		fmt.Fprintf(out, "   %-11s %-34s %s\n", row.label, row.path, evidence)
+		_, _ = fmt.Fprintf(out, "   %-11s %-34s %s\n", row.label, row.path, evidence)
 	}
 
 	if manifest.Meta.AnomalyMode {
-		fmt.Fprintf(out, "\n   ⚠️  anomaly_mode is on: at least one layer could not be identified.\n")
-		fmt.Fprintf(out, "      Edit the paths above in aether.yaml before generating anything.\n")
+		_, _ = fmt.Fprintf(out, "\n   ⚠️  anomaly_mode is on: at least one layer could not be identified.\n")
+		_, _ = fmt.Fprintf(out, "      Edit the paths above in aether.yaml before generating anything.\n")
 	}
 
 	if dryRun {
-		fmt.Fprintf(out, "\n   Nothing was written. Re-run with --apply to save this manifest.\n")
+		_, _ = fmt.Fprintf(out, "\n   Nothing was written. Re-run with --apply to save this manifest.\n")
 	}
 }
 
@@ -226,7 +226,7 @@ func detectModulePath(dir string) string {
 	if err != nil {
 		return ""
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	scanner := bufio.NewScanner(file)
 	first := true

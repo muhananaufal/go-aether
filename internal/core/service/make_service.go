@@ -174,7 +174,9 @@ func (s *AetherScaffoldService) MakeService(ctx context.Context, startDir, modul
 
 	fileName := fmt.Sprintf("%s_service.go", strings.ToLower(moduleName))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Service, fileName)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -218,7 +220,9 @@ func (s *AetherScaffoldService) MakeHandler(ctx context.Context, startDir, modul
 	}
 
 	destFile := filepath.Join(projectRoot, destDir, fileName)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -250,7 +254,9 @@ func (s *AetherScaffoldService) MakeDomain(ctx context.Context, startDir, module
 
 	fileName := fmt.Sprintf("%s.go", strings.ToLower(moduleName))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -281,7 +287,9 @@ func (s *AetherScaffoldService) MakePort(ctx context.Context, startDir, moduleNa
 
 	fileName := fmt.Sprintf("%s_port.go", strings.ToLower(moduleName))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Port, fileName)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -312,7 +320,9 @@ func (s *AetherScaffoldService) MakeRepository(ctx context.Context, startDir, mo
 
 	fileName := fmt.Sprintf("%s_repository.go", strings.ToLower(moduleName))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Repository, fileName)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -347,8 +357,12 @@ func (s *AetherScaffoldService) MakeMigration(ctx context.Context, startDir, nam
 	upDest := filepath.Join(projectRoot, "migrations", fmt.Sprintf("%s.up.sql", baseName))
 	downDest := filepath.Join(projectRoot, "migrations", fmt.Sprintf("%s.down.sql", baseName))
 
-	tx.WriteFile(ctx, upDest, upContent, force, dryRun)
-	tx.WriteFile(ctx, downDest, downContent, force, dryRun)
+	if err := tx.WriteFile(ctx, upDest, upContent, force, dryRun); err != nil {
+		return err
+	}
+	if err := tx.WriteFile(ctx, downDest, downContent, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -379,7 +393,9 @@ func (s *AetherScaffoldService) MakePipeline(ctx context.Context, startDir, name
 	}
 	// Prefix with name to allow multiple pipelines
 	fileName := fmt.Sprintf("%s_pipeline.go", strings.ToLower(name))
-	tx.WriteFile(ctx, filepath.Join(destDir, fileName), content, force, dryRun)
+	if err := tx.WriteFile(ctx, filepath.Join(destDir, fileName), content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -409,7 +425,9 @@ func (s *AetherScaffoldService) MakeSpecification(ctx context.Context, startDir,
 		return err
 	}
 	fileName := fmt.Sprintf("%s_specification.go", strings.ToLower(name))
-	tx.WriteFile(ctx, filepath.Join(destDir, fileName), content, force, dryRun)
+	if err := tx.WriteFile(ctx, filepath.Join(destDir, fileName), content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -435,7 +453,9 @@ func (s *AetherScaffoldService) MakeSeeder(ctx context.Context, startDir, name s
 	}
 
 	destFile := filepath.Join(projectRoot, "cmd", "seeder", fmt.Sprintf("%s.go", strings.ToLower(name)))
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -462,7 +482,9 @@ func (s *AetherScaffoldService) MakeValueObject(ctx context.Context, startDir, n
 
 	fileName := fmt.Sprintf("%s_vo.go", strings.ToLower(name))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -489,7 +511,9 @@ func (s *AetherScaffoldService) MakeAggregate(ctx context.Context, startDir, nam
 
 	fileName := fmt.Sprintf("%s_aggregate.go", strings.ToLower(name))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -516,7 +540,9 @@ func (s *AetherScaffoldService) MakeEvent(ctx context.Context, startDir, name st
 
 	fileName := fmt.Sprintf("%s_event.go", strings.ToLower(name))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fileName)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -543,7 +569,9 @@ func (s *AetherScaffoldService) MakeCommand(ctx context.Context, startDir, name 
 
 	fileName := fmt.Sprintf("%s_command.go", strings.ToLower(name))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Service, fileName)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -570,7 +598,9 @@ func (s *AetherScaffoldService) MakeQuery(ctx context.Context, startDir, name st
 
 	fileName := fmt.Sprintf("%s_query.go", strings.ToLower(name))
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Service, fileName)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
@@ -600,7 +630,9 @@ func (s *AetherScaffoldService) MakeCursorPaginator(ctx context.Context, startDi
 	if err != nil {
 		return err
 	}
-	tx.WriteFile(ctx, filepath.Join(destDir, "cursor.go"), content, force, dryRun)
+	if err := tx.WriteFile(ctx, filepath.Join(destDir, "cursor.go"), content, force, dryRun); err != nil {
+		return err
+	}
 
 	return tx.Commit(ctx)
 }
