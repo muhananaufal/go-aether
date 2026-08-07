@@ -38,4 +38,9 @@ var (
 	// ErrGoModMissing signals that scaffolding was requested in a directory tree that
 	// is not a Go module, so any generated import path would be unresolvable.
 	ErrGoModMissing = errors.New("aether: no go.mod found; run 'go mod init <module-path>' first")
+
+	// ErrUnsupportedStack is returned when a requested architecture, router or
+	// database driver has no template behind it. Rejecting is deliberate: silently
+	// substituting a default produced projects that ignored the user's flags.
+	ErrUnsupportedStack = errors.New("aether: requested stack selection is not supported")
 )
