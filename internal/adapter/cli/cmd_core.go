@@ -13,6 +13,36 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// maxManifestWalkUp bounds how far a command searches upward for aether.yaml.
+// Chosen to match the resolver in internal/adapter/manifest so the CLI and the
+// core never disagree about which project the user is standing in.
+const maxManifestWalkUp = 12
+
+// findManifestUpwards locates aether.yaml from dir, stopping at a repository
+// boundary or after maxManifestWalkUp levels. It returns "" when none is found.
+func findManifestUpwards(dir string) string {
+	curr := dir
+	for i := 0; i < maxManifestWalkUp; i++ {
+		candidate := filepath.Join(curr, "aether.yaml")
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate
+		}
+
+		// A .git directory marks the top of this repository. Crossing it would
+		// start describing a different project entirely.
+		if _, err := os.Stat(filepath.Join(curr, ".git")); err == nil && i > 0 {
+			return ""
+		}
+
+		parent := filepath.Dir(curr)
+		if parent == curr {
+			return ""
+		}
+		curr = parent
+	}
+	return ""
+}
+
 func newCmdAdopt(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
 	var scan, apply bool
 
@@ -194,21 +224,11 @@ func newCmdLs(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
 				return err
 			}
 
-			// Read aether.yaml if present in directory hierarchy
-			var manifestPath string
-			curr := cwd
-			for {
-				candidate := filepath.Join(curr, "aether.yaml")
-				if _, err := os.Stat(candidate); err == nil {
-					manifestPath = candidate
-					break
-				}
-				parent := filepath.Dir(curr)
-				if parent == curr {
-					break
-				}
-				curr = parent
-			}
+			// Bounded exactly like the manifest resolver. This loop used to walk to
+			// the filesystem root, so running `ls` in a directory with no project
+			// could find an unrelated aether.yaml several levels up and describe
+			// somebody else's project as if it were this one.
+			manifestPath := findManifestUpwards(cwd)
 
 			if manifestPath == "" {
 				return fmt.Errorf("no active aether project found in current directory tree (missing aether.yaml)")

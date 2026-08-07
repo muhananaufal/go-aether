@@ -14,6 +14,18 @@ type globalFlags struct {
 	DryRun  bool
 }
 
+// Execute builds the command tree and runs it, guaranteeing the project lock is
+// released on every exit path.
+//
+// Releasing it from PersistentPostRunE was not enough: cobra skips the Post
+// hooks when RunE returns an error, so any failed command left the lock held.
+// The process exiting masked it in practice, but a stale .aether.lock and a
+// held flock are exactly the state the lock exists to prevent.
+func Execute(svc port.ScaffoldService, version, commit, date string) error {
+	defer releaseProjectLock()
+	return NewRootCommand(svc, version, commit, date).Execute()
+}
+
 // NewRootCommand constructs the parent cobra command and attaches all available subcommands.
 func NewRootCommand(svc port.ScaffoldService, version, commit, date string) *cobra.Command {
 	var flags globalFlags
