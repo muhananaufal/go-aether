@@ -2,6 +2,7 @@ package writer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -101,8 +102,14 @@ func (w *AferoWriter) MkdirAll(dirPath string) error {
 }
 
 // errorsIsNotExist evaluates file existence errors across standard and afero boundaries.
+//
+// A direct == comparison never matched: both os and afero return *fs.PathError,
+// which wraps the sentinel rather than being it. The consequence was that a
+// genuinely missing manifest surfaced as a generic read failure instead of
+// ErrManifestNotFound, so callers could not tell "no project here" apart from
+// "disk is broken".
 func errorsIsNotExist(err error) bool {
-	return err == fs.ErrNotExist
+	return errors.Is(err, fs.ErrNotExist)
 }
 
 // UOWWriter implements port.FileWriter as a Unit of Work decorator that buffers writes in memory.
