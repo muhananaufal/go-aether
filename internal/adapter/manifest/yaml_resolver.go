@@ -13,6 +13,11 @@ import (
 
 const manifestFilename = "aether.yaml"
 
+// maxManifestBytes bounds how large aether.yaml may be before it is treated as
+// corrupt. A real manifest for a 200-module project is a few tens of kilobytes;
+// anything approaching this is either damaged or deliberately hostile.
+const maxManifestBytes = 256 * 1024
+
 // YamlResolver implements port.ManifestResolver using yaml.v3 with recursive walk-up capabilities.
 type YamlResolver struct {
 	writer port.FileWriter
@@ -32,6 +37,15 @@ func (r *YamlResolver) Resolve(ctx context.Context, startDir string) (*domain.Ae
 		candidate := filepath.Join(curr, manifestFilename)
 		exists, err := r.writer.Exists(candidate)
 		if err == nil && exists {
+			// Checked before reading, not after. A manifest that claims to be
+			// gigabytes long would otherwise be loaded into memory in full before
+			// anyone could object, which is a denial of service dressed as a
+			// config file.
+			if size, sizeErr := r.writer.Size(candidate); sizeErr == nil && size > maxManifestBytes {
+				return nil, "", fmt.Errorf("%w: %s is %d bytes, over the %d byte limit",
+					domain.ErrManifestCorrupt, candidate, size, maxManifestBytes)
+			}
+
 			data, readErr := r.writer.ReadFile(candidate)
 			if readErr != nil {
 				return nil, "", fmt.Errorf("%w: failed to read %s: %v", domain.ErrManifestCorrupt, candidate, readErr)

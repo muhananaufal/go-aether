@@ -93,6 +93,41 @@ func TestYamlResolver_WalkUpSearch(t *testing.T) {
 	}
 }
 
+// TestYamlResolver_RejectsOversizedManifest guards against loading a manifest
+// that claims to be enormous.
+//
+// The check happens before the read, not after: checking afterwards would mean
+// the file had already been pulled into memory in full, which is no defence at
+// all against a corrupt or hostile one.
+func TestYamlResolver_RejectsOversizedManifest(t *testing.T) {
+	memFS := afero.NewMemMapFs()
+	w := writer.NewAferoWriter(memFS)
+	resolver := manifest.NewYamlResolver(w)
+	ctx := context.Background()
+
+	// Valid YAML, just far larger than any real project could produce.
+	var buf strings.Builder
+	buf.WriteString("version: \"1\"\nproject:\n  name: bloat\n  module: example.com/bloat\nmodules:\n")
+	for buf.Len() < 300*1024 {
+		buf.WriteString("  - name: padding_module_with_a_deliberately_long_identifier\n")
+	}
+
+	if err := afero.WriteFile(memFS, "/projects/bloat/aether.yaml", []byte(buf.String()), 0o644); err != nil {
+		t.Fatalf("fixture setup: %v", err)
+	}
+
+	_, _, err := resolver.Resolve(ctx, "/projects/bloat")
+	if err == nil {
+		t.Fatal("an oversized manifest was accepted")
+	}
+	if !errors.Is(err, domain.ErrManifestCorrupt) {
+		t.Errorf("expected ErrManifestCorrupt, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "limit") {
+		t.Errorf("message should state that a limit was exceeded, got %v", err)
+	}
+}
+
 func TestStdEngine_RenderTemplate(t *testing.T) {
 	mockEmbed := fstest.MapFS{
 		"hexagonal/service.go.tmpl": &fstest.MapFile{

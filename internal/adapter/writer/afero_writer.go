@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"runtime"
 
 	"github.com/muhananaufal/go-aether/internal/core/domain"
 	"github.com/muhananaufal/go-aether/internal/core/port"
@@ -25,11 +26,25 @@ func NewAferoWriter(fileSystem afero.Fs) *AferoWriter {
 	return &AferoWriter{fs: fileSystem}
 }
 
+// maxWindowsPath is the classic MAX_PATH limit minus room for the temporary
+// suffixes the toolchain appends. Long-path support exists but is off by default
+// on most machines, and the error the OS returns when it is off names neither the
+// limit nor the fix.
+const maxWindowsPath = 240
+
 // WriteFile writes data to disk, managing conflicts, backup files, and dry-run notifications.
 func (w *AferoWriter) WriteFile(ctx context.Context, targetPath string, content []byte, overwrite, dryRun bool) error {
 	if dryRun {
 		// In dry-run mode, we abort execution before touching physical media or allocating OS descriptors.
 		return nil
+	}
+
+	if runtime.GOOS == "windows" && len(targetPath) > maxWindowsPath {
+		return fmt.Errorf(
+			"%w: destination path is %d characters, over the %d Windows supports by default: %s\n"+
+				"Move the project closer to the drive root, shorten the module name, or enable long paths "+
+				"(Computer\\HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\FileSystem\\LongPathsEnabled = 1)",
+			domain.ErrWriteFailed, len(targetPath), maxWindowsPath, targetPath)
 	}
 
 	exists, err := w.Exists(targetPath)
@@ -85,6 +100,15 @@ func (w *AferoWriter) ReadFile(path string) ([]byte, error) {
 		return nil, fmt.Errorf("failed to read file %s: %w", path, err)
 	}
 	return data, nil
+}
+
+// Size reports a file's length without reading it.
+func (w *AferoWriter) Size(path string) (int64, error) {
+	info, err := w.fs.Stat(path)
+	if err != nil {
+		return 0, fmt.Errorf("failed to stat %s: %w", path, err)
+	}
+	return info.Size(), nil
 }
 
 // DeleteFile removes a file from disk, typically during atomic transaction rollback.
@@ -196,6 +220,11 @@ func (t *UOWWriter) Exists(path string) (bool, error) {
 // ReadFile delegates to the base writer.
 func (t *UOWWriter) ReadFile(path string) ([]byte, error) {
 	return t.baseWriter.ReadFile(path)
+}
+
+// Size delegates to the base writer.
+func (t *UOWWriter) Size(path string) (int64, error) {
+	return t.baseWriter.Size(path)
 }
 
 // DeleteFile delegates to the base writer.

@@ -28,6 +28,13 @@ type FileWriter interface {
 	// ReadFile retrieves the binary contents of an existing file on the filesystem.
 	ReadFile(path string) ([]byte, error)
 
+	// Size reports the byte length of a file without reading it.
+	//
+	// Needed so the manifest can be size-checked before it is loaded into memory:
+	// checking after ReadFile would already have consumed whatever the file
+	// claimed to be, which is no defence against a corrupt or hostile one.
+	Size(path string) (int64, error)
+
 	// DeleteFile removes a file from disk during transactional atomic rollback procedures.
 	DeleteFile(path string) error
 
