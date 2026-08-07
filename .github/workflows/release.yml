@@ -22,7 +22,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.23'
+          # Must not trail go.mod, or the release build fails with what looks
+          # like a dependency error instead of a toolchain mismatch.
+          go-version: '1.25'
           cache: true
 
       - name: Run GoReleaser Pipeline
