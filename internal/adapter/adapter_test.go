@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"path/filepath"
+	"strings"
 	"testing"
 	"testing/fstest"
 
@@ -112,8 +113,69 @@ func TestStdEngine_RenderTemplate(t *testing.T) {
 		t.Fatalf("expected render to succeed, got %v", err)
 	}
 
-	expected := "package service\n\n// OrderService handles core logic for order.\ntype OrderService struct {}"
+	// The engine runs gofmt over Go output, so the expectation is the formatted
+	// form: "struct {}" collapses to "struct{}". Asserting the unformatted string
+	// here would lock in the very defect the formatter was added to remove.
+	expected := "package service\n\n// OrderService handles core logic for order.\ntype OrderService struct{}\n"
 	if string(rendered) != expected {
 		t.Errorf("expected:\n%s\ngot:\n%s", expected, string(rendered))
+	}
+}
+
+func TestStdEngine_RejectsInvalidGoSource(t *testing.T) {
+	mockEmbed := fstest.MapFS{
+		// A template that renders syntactically broken Go. Without the format gate
+		// this lands on disk and the user meets it as a compiler error with no clue
+		// which template produced it.
+		"hexagonal/broken.go.tmpl": &fstest.MapFile{
+			Data: []byte("package service\n\nfunc {{ .ModuleNameTitle }}( {"),
+		},
+	}
+	eng := template.NewStdEngine(mockEmbed)
+
+	m := domain.NewDefaultManifest("app", "github.com/company/app", "1.23", "hexagonal", "postgres", "chi")
+	data, err := domain.NewTemplateData("order", m, nil, false, false)
+	if err != nil {
+		t.Fatalf("failed to construct TemplateData: %v", err)
+	}
+
+	out, err := eng.Render(context.Background(), "hexagonal/broken.go.tmpl", data)
+	if err == nil {
+		t.Fatalf("expected invalid Go to be rejected, but render succeeded with:\n%s", out)
+	}
+	if !errors.Is(err, domain.ErrGeneratedCodeInvalid) {
+		t.Errorf("expected ErrGeneratedCodeInvalid so callers can react, got %v", err)
+	}
+	if !strings.Contains(err.Error(), "broken.go.tmpl") {
+		t.Errorf("error must name the offending template to be actionable, got %v", err)
+	}
+	if out != nil {
+		t.Errorf("no bytes may be returned when the source is invalid, got %d bytes", len(out))
+	}
+}
+
+func TestStdEngine_NonGoTemplatesBypassFormatter(t *testing.T) {
+	// SQL, YAML, shell and proto templates are not Go and must survive untouched.
+	// Running them through go/format would reject every one of them.
+	mockEmbed := fstest.MapFS{
+		"common/migration_up.sql.tmpl": &fstest.MapFile{
+			Data: []byte("CREATE TABLE {{ .ModuleNamePkg }}s (\n    id   VARCHAR(128) PRIMARY KEY\n);"),
+		},
+	}
+	eng := template.NewStdEngine(mockEmbed)
+
+	m := domain.NewDefaultManifest("app", "github.com/company/app", "1.23", "hexagonal", "postgres", "chi")
+	data, err := domain.NewTemplateData("order", m, nil, false, false)
+	if err != nil {
+		t.Fatalf("failed to construct TemplateData: %v", err)
+	}
+
+	out, err := eng.Render(context.Background(), "common/migration_up.sql.tmpl", data)
+	if err != nil {
+		t.Fatalf("non-Go template must render untouched, got %v", err)
+	}
+	expected := "CREATE TABLE orders (\n    id   VARCHAR(128) PRIMARY KEY\n);"
+	if string(out) != expected {
+		t.Errorf("SQL must not be reformatted.\nexpected:\n%s\ngot:\n%s", expected, string(out))
 	}
 }

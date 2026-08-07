@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"go/format"
 	"io/fs"
 	"path"
 	"strings"
@@ -12,6 +13,10 @@ import (
 	"github.com/muhananaufal/go-aether/internal/core/domain"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 )
+
+// goTemplateSuffix marks templates whose rendered output is Go source and must
+// therefore pass through the formatter before it is allowed near a disk.
+const goTemplateSuffix = ".go.tmpl"
 
 // Compile-time interface compliance check
 var _ port.TemplateEngine = (*StdEngine)(nil)
@@ -53,6 +58,19 @@ func (e *StdEngine) Render(ctx context.Context, templatePath string, data *domai
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
 		return nil, fmt.Errorf("aether: template execution failed on %q: %w", normalizedPath, err)
+	}
+
+	// Go output passes through gofmt before anyone sees it. Two reasons, both
+	// user-facing: unformatted source is rewritten by every editor on save and
+	// pollutes the project's first commit, and a template that renders broken
+	// syntax must fail here — with the template name and offending line — rather
+	// than land on disk and surface later as an opaque compiler error.
+	if strings.HasSuffix(normalizedPath, goTemplateSuffix) {
+		formatted, fmtErr := format.Source(buf.Bytes())
+		if fmtErr != nil {
+			return nil, fmt.Errorf("%w: template %q: %v", domain.ErrGeneratedCodeInvalid, normalizedPath, fmtErr)
+		}
+		return formatted, nil
 	}
 
 	return buf.Bytes(), nil
