@@ -3,12 +3,10 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
-
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 
 	"{{ .PackagePath }}/{{ .Paths.Domain }}"
 	"{{ .PackagePath }}/{{ .Paths.Port }}"
@@ -18,9 +16,9 @@ import (
 // interface gains a method, the build breaks here rather than at the call site.
 var _ port.{{ .ModuleNameTitle }}Repository = (*{{ .ModuleNameTitle }}Repository)(nil)
 
-// {{ .ModuleNameTitle }}Repository persists {{ .ModuleNameTitle }} entities in PostgreSQL.
+// {{ .ModuleNameTitle }}Repository persists {{ .ModuleNameTitle }} entities in MySQL.
 type {{ .ModuleNameTitle }}Repository struct {
-	db *pgxpool.Pool
+	db *sql.DB
 }
 
 // New{{ .ModuleNameTitle }}Repository wires the repository to an existing pool.
@@ -28,16 +26,18 @@ type {{ .ModuleNameTitle }}Repository struct {
 // The pool is injected rather than created here: connection lifecycle belongs to
 // main, and a repository that opens its own pool multiplies connections by the
 // number of repositories in the process.
-func New{{ .ModuleNameTitle }}Repository(db *pgxpool.Pool) *{{ .ModuleNameTitle }}Repository {
+func New{{ .ModuleNameTitle }}Repository(db *sql.DB) *{{ .ModuleNameTitle }}Repository {
 	return &{{ .ModuleNameTitle }}Repository{db: db}
 }
 
 // Save inserts the entity, or refreshes it when the identifier already exists.
 func (r *{{ .ModuleNameTitle }}Repository) Save(ctx context.Context, entity *domain.{{ .ModuleNameTitle }}) error {
+	// MySQL spells upsert differently from Postgres and SQLite; this is precisely
+	// why each driver gets its own adapter rather than one file with branches.
 	const query = `
 		INSERT INTO {{ .ModuleNamePkg }}s (id, created_at, updated_at)
-		VALUES ($1, $2, $3)
-		ON CONFLICT (id) DO UPDATE SET updated_at = EXCLUDED.updated_at`
+		VALUES (?, ?, ?)
+		ON DUPLICATE KEY UPDATE updated_at = VALUES(updated_at)`
 
 	now := time.Now().UTC()
 	if entity.CreatedAt.IsZero() {
@@ -45,7 +45,7 @@ func (r *{{ .ModuleNameTitle }}Repository) Save(ctx context.Context, entity *dom
 	}
 	entity.UpdatedAt = now
 
-	if _, err := r.db.Exec(ctx, query, entity.ID, entity.CreatedAt, entity.UpdatedAt); err != nil {
+	if _, err := r.db.ExecContext(ctx, query, entity.ID, entity.CreatedAt, entity.UpdatedAt); err != nil {
 		return fmt.Errorf("save {{ .ModuleNamePkg }} %q: %w", entity.ID, err)
 	}
 	return nil
@@ -57,12 +57,12 @@ func (r *{{ .ModuleNameTitle }}Repository) FindByID(ctx context.Context, id stri
 	const query = `
 		SELECT id, created_at, updated_at
 		FROM {{ .ModuleNamePkg }}s
-		WHERE id = $1`
+		WHERE id = ?`
 
 	var entity domain.{{ .ModuleNameTitle }}
-	err := r.db.QueryRow(ctx, query, id).Scan(&entity.ID, &entity.CreatedAt, &entity.UpdatedAt)
+	err := r.db.QueryRowContext(ctx, query, id).Scan(&entity.ID, &entity.CreatedAt, &entity.UpdatedAt)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, domain.Err{{ .ModuleNameTitle }}NotFound
 		}
 		return nil, fmt.Errorf("find {{ .ModuleNamePkg }} %q: %w", id, err)
