@@ -8,6 +8,7 @@ import (
 
 	"github.com/muhananaufal/go-aether/internal/adapter/cli/prompt"
 	"github.com/muhananaufal/go-aether/internal/adapter/config"
+	"github.com/muhananaufal/go-aether/internal/core/domain"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -86,7 +87,11 @@ func newCmdInit(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
 			}
 
 			if !cmd.Flags().Changed("arch") && prompt.IsInteractive() {
-				selectedArch, err := prompt.AskSelect("Architecture Pattern", []string{"hexagonal", "clean", "ddd"})
+				// Option lists are read from the domain rather than typed out here.
+				// Hardcoding them is how the prompt came to offer "clean", "ddd" and
+				// "mux": choices with no template behind them, which a user could
+				// select and only then be rejected.
+				selectedArch, err := prompt.AskSelect("Architecture Pattern", domain.SupportedArchitectures())
 				if err != nil {
 					return err
 				}
@@ -94,7 +99,7 @@ func newCmdInit(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
 			}
 
 			if !cmd.Flags().Changed("db") && prompt.IsInteractive() {
-				selectedDB, err := prompt.AskSelect("Database Engine", []string{"postgres", "mysql", "sqlite", "none"})
+				selectedDB, err := prompt.AskSelect("Database Engine", domain.SupportedDBDrivers())
 				if err != nil {
 					return err
 				}
@@ -102,7 +107,7 @@ func newCmdInit(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
 			}
 
 			if !cmd.Flags().Changed("router") && prompt.IsInteractive() {
-				selectedRouter, err := prompt.AskSelect("HTTP Router", []string{"chi", "gin", "echo", "fiber", "mux"})
+				selectedRouter, err := prompt.AskSelect("HTTP Router", domain.SupportedRouters())
 				if err != nil {
 					return err
 				}
@@ -150,9 +155,14 @@ func newCmdInit(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&moduleName, "module", "github.com/example/app", "Go module identifier for go.mod")
-	cmd.Flags().StringVar(&arch, "arch", "hexagonal", "Architecture blueprint (hexagonal, clean, ddd)")
-	cmd.Flags().StringVar(&dbDriver, "db", "postgres", "Database engine driver (postgres, mysql, sqlite)")
-	cmd.Flags().StringVar(&router, "router", "chi", "HTTP routing framework (chi, gin, echo)")
+	// Help text is generated from the same sets the validator enforces, so it
+	// cannot drift into advertising a value that would then be rejected.
+	cmd.Flags().StringVar(&arch, "arch", domain.DefaultArchitecture,
+		"Architecture blueprint ("+strings.Join(domain.SupportedArchitectures(), ", ")+")")
+	cmd.Flags().StringVar(&dbDriver, "db", domain.DefaultDBDriver,
+		"Database engine driver ("+strings.Join(domain.SupportedDBDrivers(), ", ")+")")
+	cmd.Flags().StringVar(&router, "router", domain.DefaultRouter,
+		"HTTP routing framework ("+strings.Join(domain.SupportedRouters(), ", ")+")")
 
 	return cmd
 }
