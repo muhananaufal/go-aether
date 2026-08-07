@@ -23,6 +23,10 @@ type AetherScaffoldService struct {
 	// as a nil dereference during someone's first `adopt`.
 	scanner     port.LayoutScanner
 	byoDetector port.BYODetector
+
+	// auditor powers doctor's mentor report. Optional: a nil auditor simply
+	// omits that section rather than failing the diagnostic.
+	auditor port.CodeAuditor
 }
 
 // NewAetherScaffoldService constructs the main orchestrator engine.
@@ -35,6 +39,7 @@ func NewAetherScaffoldService(
 	fs port.FileWriter,
 	scanner port.LayoutScanner,
 	byoDetector port.BYODetector,
+	auditor port.CodeAuditor,
 ) *AetherScaffoldService {
 	return &AetherScaffoldService{
 		engine:      engine,
@@ -42,6 +47,7 @@ func NewAetherScaffoldService(
 		fs:          fs,
 		scanner:     scanner,
 		byoDetector: byoDetector,
+		auditor:     auditor,
 	}
 }
 

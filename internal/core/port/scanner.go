@@ -22,6 +22,18 @@ type LayoutScanner interface {
 	Scan(ctx context.Context, root string) (*domain.LayoutReport, error)
 }
 
+// CodeAuditor inspects a project against the practices go-aether exists to
+// teach, and reports what it finds.
+//
+// The point is not to be a linter. golangci-lint already checks whether the code
+// is correct Go; this checks whether it will survive production, which is the
+// part a newcomer has no way to anticipate.
+type CodeAuditor interface {
+	// Audit walks the project rooted at dir. Like the scanner it must be
+	// bounded, and finding nothing is a valid report rather than an error.
+	Audit(ctx context.Context, dir string) (*domain.AuditReport, error)
+}
+
 // BYODetector finds infrastructure clients an existing project already builds,
 // so generated code can accept them rather than construct duplicates.
 type BYODetector interface {

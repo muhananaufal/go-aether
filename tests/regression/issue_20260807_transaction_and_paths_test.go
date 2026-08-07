@@ -108,7 +108,7 @@ func TestRegression_Issue20260807_PartialWriteRollsBackCompletely(t *testing.T) 
 		"hexagonal/repository_postgres.go.tmpl": &fstest.MapFile{Data: []byte("package repository\n")},
 	}
 
-	svc := service.NewAetherScaffoldService(template.NewStdEngine(templates), resolver, failing, nil, nil)
+	svc := service.NewAetherScaffoldService(template.NewStdEngine(templates), resolver, failing, nil, nil, nil)
 
 	err := svc.MakeModule(ctx, projectDir, "order", []string{"http"}, false, false, false, false)
 	if err == nil {
@@ -170,7 +170,7 @@ func TestRegression_Issue20260807_ManifestSurvivesFailedGeneration(t *testing.T)
 		"hexagonal/repository_postgres.go.tmpl": &fstest.MapFile{Data: []byte("package repository\n")},
 	}
 
-	svc := service.NewAetherScaffoldService(template.NewStdEngine(templates), resolver, failing, nil, nil)
+	svc := service.NewAetherScaffoldService(template.NewStdEngine(templates), resolver, failing, nil, nil, nil)
 
 	if err := svc.MakeModule(ctx, projectDir, "order", []string{"http"}, false, false, false, false); err == nil {
 		t.Fatal("MakeModule reported success although a write failed")

@@ -41,7 +41,7 @@ func newFixture(t *testing.T, files fstest.MapFS) (port.ScaffoldService, port.Fi
 
 	// nil scanner and detector: none of these cases exercise brownfield adoption,
 	// and passing real ones would let a scan failure masquerade as a generator bug.
-	svc := service.NewAetherScaffoldService(template.NewStdEngine(files), resolver, w, nil, nil)
+	svc := service.NewAetherScaffoldService(template.NewStdEngine(files), resolver, w, nil, nil, nil)
 	return svc, w, resolver
 }
 

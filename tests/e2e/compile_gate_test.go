@@ -41,6 +41,7 @@ func newRealFSService() port.ScaffoldService {
 		engine, resolver, fileWriter,
 		scanner.NewGoLayoutScanner(),
 		scanner.NewGoBYODetector(),
+		scanner.NewGoCodeAuditor(),
 	)
 }
 

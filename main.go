@@ -31,9 +31,10 @@ func main() {
 	engine := template.NewStdEngine(templates.FS)
 	layoutScanner := scanner.NewGoLayoutScanner()
 	byoDetector := scanner.NewGoBYODetector()
+	codeAuditor := scanner.NewGoCodeAuditor()
 
 	// Wire service orchestration layer
-	scaffoldService := service.NewAetherScaffoldService(engine, resolver, fileWriter, layoutScanner, byoDetector)
+	scaffoldService := service.NewAetherScaffoldService(engine, resolver, fileWriter, layoutScanner, byoDetector, codeAuditor)
 
 	// Bind CLI root entrypoint and execute
 	if err := cli.Execute(scaffoldService, version, commit, date); err != nil {

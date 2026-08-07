@@ -7,6 +7,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/muhananaufal/go-aether/internal/core/domain"
 )
 
 // RunDoctor performs structural health diagnostics and configuration checks against aether.yaml.
@@ -74,10 +76,53 @@ func (s *AetherScaffoldService) RunDoctor(ctx context.Context, startDir string, 
 		_, _ = fmt.Fprintf(out, "\n⚠️ Warning: Some external dependencies are missing. Some generator features might not work.\n")
 	}
 
+	s.reportAudit(ctx, projectRoot, out)
+
 	if corruptCount > 0 {
 		_, _ = fmt.Fprintf(out, "\n❌ Doctor check complete. Project structure is CORRUPT. Please fix the missing files.\n")
 	} else {
 		_, _ = fmt.Fprintf(out, "\n✨ Doctor check complete. Project structure is sound.\n")
 	}
 	return nil
+}
+
+// reportAudit prints the mentor section: what the project does that will hold up
+// in development and fail in production.
+//
+// Structural checks above answer "did go-aether generate what it promised".
+// This answers the question a newcomer cannot yet ask of their own code.
+func (s *AetherScaffoldService) reportAudit(ctx context.Context, projectRoot string, out io.Writer) {
+	if s.auditor == nil {
+		return
+	}
+
+	report, err := s.auditor.Audit(ctx, projectRoot)
+	if err != nil {
+		_, _ = fmt.Fprintf(out, "\n⚠️ Practice audit could not complete: %v\n", err)
+		return
+	}
+
+	_, _ = fmt.Fprintf(out, "\n📋 Practice Audit (%d Go files inspected):\n", report.FilesSeen)
+
+	if len(report.Findings) == 0 {
+		_, _ = fmt.Fprintf(out, "   ✅ Nothing to flag.\n")
+		return
+	}
+
+	// Worst first, so the line nearest the prompt is the one that matters most.
+	for _, finding := range report.Sorted() {
+		location := ""
+		if finding.File != "" {
+			location = "  (" + finding.File + ")"
+		}
+		_, _ = fmt.Fprintf(out, "\n   %s %-34s %s%s\n", finding.Severity.Icon(), finding.Rule, finding.Message, location)
+		_, _ = fmt.Fprintf(out, "      → %s\n", finding.Hint)
+	}
+
+	_, _ = fmt.Fprintf(out, "\n   %d critical, %d warning, %d suggestion(s).\n",
+		report.Count(domain.AuditCritical), report.Count(domain.AuditWarn), report.Count(domain.AuditInfo))
+
+	if report.HasBlocking() {
+		_, _ = fmt.Fprintf(out, "   Address the critical findings before deploying.\n")
+	}
 }

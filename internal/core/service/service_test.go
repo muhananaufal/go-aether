@@ -37,7 +37,7 @@ func TestAetherScaffoldService_E2E_InitAndMakeModule(t *testing.T) {
 	}
 
 	engine := template.NewStdEngine(mockEmbed)
-	svc := service.NewAetherScaffoldService(engine, resolver, w, nil, nil)
+	svc := service.NewAetherScaffoldService(engine, resolver, w, nil, nil, nil)
 	ctx := context.Background()
 	projectDir := "/projects/e2e-app"
 	_ = w.MkdirAll(projectDir)
@@ -110,7 +110,7 @@ func TestAetherScaffoldService_Phase13_TestingAndQASuite(t *testing.T) {
 	}
 
 	engine := template.NewStdEngine(mockEmbed)
-	svc := service.NewAetherScaffoldService(engine, resolver, w, nil, nil)
+	svc := service.NewAetherScaffoldService(engine, resolver, w, nil, nil, nil)
 	ctx := context.Background()
 	projectDir := "/projects/qa-app"
 	_ = w.MkdirAll(projectDir)
@@ -215,7 +215,7 @@ func TestAetherScaffoldService_Phase14_SQLC_GRPC_MultiTenancy(t *testing.T) {
 	}
 
 	engine := template.NewStdEngine(mockEmbed)
-	svc := service.NewAetherScaffoldService(engine, resolver, w, nil, nil)
+	svc := service.NewAetherScaffoldService(engine, resolver, w, nil, nil, nil)
 	ctx := context.Background()
 	projectDir := "/projects/enterprise-app"
 	_ = w.MkdirAll(projectDir)
@@ -298,7 +298,7 @@ func TestAetherScaffoldService_Phase15_Concurrency_ZeroTrust(t *testing.T) {
 	}
 
 	engine := template.NewStdEngine(mockEmbed)
-	svc := service.NewAetherScaffoldService(engine, resolver, w, nil, nil)
+	svc := service.NewAetherScaffoldService(engine, resolver, w, nil, nil, nil)
 	ctx := context.Background()
 	projectDir := "/projects/final-app"
 	_ = w.MkdirAll(projectDir)
@@ -358,7 +358,7 @@ func TestAetherScaffoldService_Phase16_FinalGap(t *testing.T) {
 	}
 
 	engine := template.NewStdEngine(mockEmbed)
-	svc := service.NewAetherScaffoldService(engine, resolver, w, nil, nil)
+	svc := service.NewAetherScaffoldService(engine, resolver, w, nil, nil, nil)
 	ctx := context.Background()
 	projectDir := "/projects/final-gap-app"
 	_ = w.MkdirAll(projectDir)
