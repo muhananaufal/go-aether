@@ -6,6 +6,7 @@ import (
 
 	"github.com/muhananaufal/go-aether/internal/adapter/cli"
 	"github.com/muhananaufal/go-aether/internal/adapter/manifest"
+	"github.com/muhananaufal/go-aether/internal/adapter/scanner"
 	"github.com/muhananaufal/go-aether/internal/adapter/template"
 	"github.com/muhananaufal/go-aether/internal/adapter/writer"
 	"github.com/muhananaufal/go-aether/internal/core/service"
@@ -26,9 +27,11 @@ func main() {
 	fileWriter := writer.NewAferoWriter(osFS)
 	resolver := manifest.NewYamlResolver(fileWriter)
 	engine := template.NewStdEngine(templates.FS)
+	layoutScanner := scanner.NewGoLayoutScanner()
+	byoDetector := scanner.NewGoBYODetector()
 
 	// Wire service orchestration layer
-	scaffoldService := service.NewAetherScaffoldService(engine, resolver, fileWriter)
+	scaffoldService := service.NewAetherScaffoldService(engine, resolver, fileWriter, layoutScanner, byoDetector)
 
 	// Bind CLI root entrypoint and execute
 	rootCommand := cli.NewRootCommand(scaffoldService, version, commit, date)

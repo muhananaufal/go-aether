@@ -16,14 +16,32 @@ type AetherScaffoldService struct {
 	engine   port.TemplateEngine
 	resolver port.ManifestResolver
 	fs       port.FileWriter
+
+	// scanner and byoDetector are only consulted by brownfield adoption. They are
+	// injected rather than constructed here so the core keeps depending on ports
+	// alone, and a missing wiring is caught at the call site instead of surfacing
+	// as a nil dereference during someone's first `adopt`.
+	scanner     port.LayoutScanner
+	byoDetector port.BYODetector
 }
 
 // NewAetherScaffoldService constructs the main orchestrator engine.
-func NewAetherScaffoldService(engine port.TemplateEngine, resolver port.ManifestResolver, fs port.FileWriter) *AetherScaffoldService {
+//
+// scanner and byoDetector may be nil for callers that never adopt an existing
+// repository; AdoptProject reports the omission rather than panicking.
+func NewAetherScaffoldService(
+	engine port.TemplateEngine,
+	resolver port.ManifestResolver,
+	fs port.FileWriter,
+	scanner port.LayoutScanner,
+	byoDetector port.BYODetector,
+) *AetherScaffoldService {
 	return &AetherScaffoldService{
-		engine:   engine,
-		resolver: resolver,
-		fs:       fs,
+		engine:      engine,
+		resolver:    resolver,
+		fs:          fs,
+		scanner:     scanner,
+		byoDetector: byoDetector,
 	}
 }
 

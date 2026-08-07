@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/muhananaufal/go-aether/internal/adapter/manifest"
+	"github.com/muhananaufal/go-aether/internal/adapter/scanner"
 	"github.com/muhananaufal/go-aether/internal/adapter/template"
 	"github.com/muhananaufal/go-aether/internal/adapter/writer"
 	"github.com/muhananaufal/go-aether/internal/core/port"
@@ -36,7 +37,11 @@ func newRealFSService() port.ScaffoldService {
 	fileWriter := writer.NewAferoWriter(osFS)
 	resolver := manifest.NewYamlResolver(fileWriter)
 	engine := template.NewStdEngine(templates.FS)
-	return service.NewAetherScaffoldService(engine, resolver, fileWriter)
+	return service.NewAetherScaffoldService(
+		engine, resolver, fileWriter,
+		scanner.NewGoLayoutScanner(),
+		scanner.NewGoBYODetector(),
+	)
 }
 
 // requireGoToolchain skips rather than fails when the toolchain is unavailable,
