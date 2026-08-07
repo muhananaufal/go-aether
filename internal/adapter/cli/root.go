@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/muhananaufal/go-aether/internal/adapter/config"
 	"github.com/muhananaufal/go-aether/internal/core/port"
@@ -40,6 +41,20 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 			}
 			if !cmd.Flags().Changed("architecture") && cfg.Preferences.Architecture != "" && cmd.Flags().Lookup("architecture") != nil {
 				_ = cmd.Flags().Set("architecture", cfg.Preferences.Architecture)
+			}
+			
+			// Try to acquire the project lock for safety, unless it's a read-only command like ls or doctor
+			if cmd.Name() != "ls" && cmd.Name() != "doctor" && cmd.Name() != "adopt" && cmd.Name() != "init" {
+				cwd, _ := os.Getwd()
+				if err := acquireProjectLock(cmd.Context(), cwd); err != nil {
+					return err
+				}
+			}
+			return nil
+		},
+		PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+			if cmd.Name() != "ls" && cmd.Name() != "doctor" && cmd.Name() != "adopt" && cmd.Name() != "init" {
+				releaseProjectLock()
 			}
 			return nil
 		},

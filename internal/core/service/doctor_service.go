@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 // RunDoctor performs structural health diagnostics and configuration checks against aether.yaml.
@@ -28,8 +30,27 @@ func (s *AetherScaffoldService) RunDoctor(ctx context.Context, startDir string, 
 
 	// Audit registered feature modules
 	_, _ = fmt.Fprintf(out, "ℹ️ Registered Modules count: %d\n", len(manifest.Modules))
+	projectRoot := filepath.Dir(manifestPath)
+	var corruptCount int
+
 	for _, mod := range manifest.Modules {
-		_, _ = fmt.Fprintf(out, "   - Module [%s]: Transports=%v, Cache=%t\n", mod.Name, mod.Transports, mod.HasCache)
+		domainPath := filepath.Join(projectRoot, manifest.Architecture.Paths.Domain, fmt.Sprintf("%s.go", strings.ToLower(mod.Name)))
+		exists, err := s.fs.Exists(domainPath)
+		
+		status := "✅"
+		if err != nil || !exists {
+			status = "❌ (MISSING FILE)"
+			corruptCount++
+		}
+		
+		_, _ = fmt.Fprintf(out, "   %s Module [%s]: Transports=%v, Cache=%t\n", status, mod.Name, mod.Transports, mod.HasCache)
+		if status != "✅" {
+			_, _ = fmt.Fprintf(out, "      -> Expected physical file not found: %s\n", domainPath)
+		}
+	}
+
+	if corruptCount > 0 {
+		_, _ = fmt.Fprintf(out, "⚠️ [CRITICAL] %d module(s) are registered in aether.yaml but missing physical domain files!\n", corruptCount)
 	}
 
 	if manifest.Meta.AnomalyMode {
@@ -53,6 +74,10 @@ func (s *AetherScaffoldService) RunDoctor(ctx context.Context, startDir string, 
 		_, _ = fmt.Fprintf(out, "\n⚠️ Warning: Some external dependencies are missing. Some generator features might not work.\n")
 	}
 
-	_, _ = fmt.Fprintf(out, "\n✨ Doctor check complete. Project structure is sound.\n")
+	if corruptCount > 0 {
+		_, _ = fmt.Fprintf(out, "\n❌ Doctor check complete. Project structure is CORRUPT. Please fix the missing files.\n")
+	} else {
+		_, _ = fmt.Fprintf(out, "\n✨ Doctor check complete. Project structure is sound.\n")
+	}
 	return nil
 }
