@@ -1055,6 +1055,20 @@ func (s *AetherScaffoldService) AddLedger(ctx context.Context, startDir string, 
 	}
 	tx.WriteFile(ctx, filepath.Join(destDir, "ledger.go"), content, force, dryRun)
 
+	// Render migrations/timestamp_create_ledger_tables.up.sql & down.sql
+	timestamp := time.Now().Format("20060102150405")
+	upContent, err := s.engine.Render(ctx, "plugins/ledger_up.sql.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.WriteFile(ctx, filepath.Join(projectRoot, "migrations", fmt.Sprintf("%s_create_ledger_tables.up.sql", timestamp)), upContent, force, dryRun)
+
+	downContent, err := s.engine.Render(ctx, "plugins/ledger_down.sql.tmpl", data)
+	if err != nil {
+		return err
+	}
+	tx.WriteFile(ctx, filepath.Join(projectRoot, "migrations", fmt.Sprintf("%s_create_ledger_tables.down.sql", timestamp)), downContent, force, dryRun)
+
 	return tx.Commit(ctx)
 }
 

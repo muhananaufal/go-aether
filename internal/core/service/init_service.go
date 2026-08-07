@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -30,6 +32,23 @@ func (s *AetherScaffoldService) InitProject(ctx context.Context, destDir, projec
 	if !dryRun {
 		if err := s.resolver.Save(ctx, destDir, manifest, s.fs); err != nil {
 			return fmt.Errorf("failed writing initial manifest: %w", err)
+		}
+
+		// Check if destDir exists on real OS to avoid breaking afero MemMapFs unit tests
+		if _, statErr := os.Stat(destDir); statErr == nil {
+			// Initialize go.mod automatically
+			cmdInit := exec.CommandContext(ctx, "go", "mod", "init", moduleName)
+			cmdInit.Dir = destDir
+			if out, err := cmdInit.CombinedOutput(); err != nil {
+				return fmt.Errorf("failed to run go mod init: %s (%w)", string(out), err)
+			}
+
+			// Run go mod tidy just in case
+			cmdTidy := exec.CommandContext(ctx, "go", "mod", "tidy")
+			cmdTidy.Dir = destDir
+			if out, err := cmdTidy.CombinedOutput(); err != nil {
+				return fmt.Errorf("failed to run go mod tidy: %s (%w)", string(out), err)
+			}
 		}
 	}
 
