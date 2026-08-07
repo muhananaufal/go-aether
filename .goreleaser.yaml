@@ -37,11 +37,14 @@ builds:
       - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.CommitDate}}
 
 archives:
-  - format: tar.gz
+  # `formats` (plural) rather than the deprecated `format`. GoReleaser v2
+  # replaced the scalar with a list; the old key still parses but fails
+  # `goreleaser check`, and the release job with it.
+  - formats: [tar.gz]
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 
 checksum:
   name_template: "checksums.txt"

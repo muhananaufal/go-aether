@@ -36,7 +36,11 @@ jobs:
         uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
-          version: latest
+          # Pinned, not `latest`. GoReleaser deprecated archives.format in favour
+          # of archives.formats, and `latest` picked that up between two releases
+          # of unchanged config, failing the job on a tag that was already pushed.
+          # A release pipeline that changes underfoot is one you cannot re-run.
+          version: v2.17.1
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
