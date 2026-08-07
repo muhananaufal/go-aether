@@ -38,6 +38,22 @@ var (
 		"sqlite":   {},
 		"none":     {},
 	}
+
+	// supportedDeployTargets exists because --target flowed straight into a
+	// filename with no validation at all. Traversal was blocked only because the
+	// template lookup happened to fail first, and the error it produced quoted
+	// the attacker's path back at the terminal.
+	//
+	// Only k8s has a template. Helm, Lambda and plain Docker are advertised in
+	// the README but were never implemented.
+	supportedDeployTargets = map[string]struct{}{
+		"k8s": {},
+	}
+
+	// supportedCICDProviders mirrors the templates that exist under cloud/.
+	supportedCICDProviders = map[string]struct{}{
+		"github": {},
+	}
 )
 
 // Default stack selections, applied when a caller supplies an empty value.
@@ -83,6 +99,29 @@ func ValidateStackSelection(arch, dbDriver, router string) error {
 	}
 	return nil
 }
+
+// ValidateDeployTarget rejects a deployment target that has no manifest template.
+func ValidateDeployTarget(target string) error {
+	normalized := strings.ToLower(strings.TrimSpace(target))
+	if _, ok := supportedDeployTargets[normalized]; !ok {
+		return fmt.Errorf("%w: deployment target %q has no template; supported: %s",
+			ErrUnsupportedStack, target, sortedKeys(supportedDeployTargets))
+	}
+	return nil
+}
+
+// ValidateCICDProvider rejects a CI provider that has no pipeline template.
+func ValidateCICDProvider(provider string) error {
+	normalized := strings.ToLower(strings.TrimSpace(provider))
+	if _, ok := supportedCICDProviders[normalized]; !ok {
+		return fmt.Errorf("%w: CI provider %q has no template; supported: %s",
+			ErrUnsupportedStack, provider, sortedKeys(supportedCICDProviders))
+	}
+	return nil
+}
+
+// SupportedDeployTargets reports the deployment targets the CLI may offer.
+func SupportedDeployTargets() []string { return sortedSlice(supportedDeployTargets) }
 
 // SupportedRouters reports the router identifiers the CLI may offer, sorted so
 // the interactive prompt and the help text stay stable between runs.

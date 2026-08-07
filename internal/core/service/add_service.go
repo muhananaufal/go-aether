@@ -122,8 +122,16 @@ func (s *AetherScaffoldService) AddCache(ctx context.Context, startDir, cacheTyp
 		return fmt.Errorf("unsupported cache driver %q: %w", cacheType, err)
 	}
 
+	// cacheType reaches a filename, so it is bounded here as well as by the
+	// template lookup above. Defence in depth: the lookup ordering is not a
+	// security property and should not be relied on as one.
+	destFile, err := domain.SafeJoin(filepath.Dir(manifestPath),
+		manifest.Architecture.Paths.Pkg, "cache", fmt.Sprintf("%s.go", cacheType))
+	if err != nil {
+		return err
+	}
+
 	tx := s.fs.BeginTransaction()
-	destFile := filepath.Join(filepath.Dir(manifestPath), manifest.Architecture.Paths.Pkg, "cache", fmt.Sprintf("%s.go", cacheType))
 	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
 		return err
 	}
@@ -293,18 +301,35 @@ func (s *AetherScaffoldService) AddDeploy(ctx context.Context, startDir, target 
 		return fmt.Errorf("failed to locate aether.yaml: %w", err)
 	}
 
-	data, _ := domain.NewTemplateData("deploy", manifest, nil, false, false)
+	// --target used to flow straight into both a template name and a filename.
+	// Traversal was stopped only because the template lookup failed first, which
+	// is an accident of ordering rather than a boundary.
+	if err := domain.ValidateDeployTarget(target); err != nil {
+		return err
+	}
+	target = strings.ToLower(strings.TrimSpace(target))
+
+	data, err := domain.NewTemplateData("deploy", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
 	tmplName := fmt.Sprintf("cloud/%s_deployment.yaml.tmpl", target)
 	content, err := s.engine.Render(ctx, tmplName, data)
 	if err != nil {
 		return err
 	}
 
-	tx := s.fs.BeginTransaction()
 	projectRoot := filepath.Dir(manifestPath)
-	destFile := filepath.Join(projectRoot, "deploy", fmt.Sprintf("%s.yaml", target))
+	destFile, err := domain.SafeJoin(projectRoot, "deploy", fmt.Sprintf("%s.yaml", target))
+	if err != nil {
+		return err
+	}
 
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	tx := s.fs.BeginTransaction()
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 	return tx.Commit(ctx)
 }
 
@@ -315,24 +340,30 @@ func (s *AetherScaffoldService) AddCICD(ctx context.Context, startDir, provider 
 		return fmt.Errorf("failed to locate aether.yaml: %w", err)
 	}
 
-	data, _ := domain.NewTemplateData("cicd", manifest, nil, false, false)
-	var tmplName, destFile string
-
-	projectRoot := filepath.Dir(manifestPath)
-	if provider == "github" {
-		tmplName = "cloud/github_actions.yml.tmpl"
-		destFile = filepath.Join(projectRoot, ".github", "workflows", "ci.yml")
-	} else {
-		return fmt.Errorf("unsupported CI/CD provider: %s", provider)
+	if err := domain.ValidateCICDProvider(provider); err != nil {
+		return err
 	}
 
-	content, err := s.engine.Render(ctx, tmplName, data)
+	data, err := domain.NewTemplateData("cicd", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+
+	projectRoot := filepath.Dir(manifestPath)
+	destFile, err := domain.SafeJoin(projectRoot, ".github", "workflows", "ci.yml")
+	if err != nil {
+		return err
+	}
+
+	content, err := s.engine.Render(ctx, "cloud/github_actions.yml.tmpl", data)
 	if err != nil {
 		return err
 	}
 
 	tx := s.fs.BeginTransaction()
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 	return tx.Commit(ctx)
 }
 
