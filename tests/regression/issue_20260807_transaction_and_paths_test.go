@@ -189,7 +189,7 @@ func TestRegression_Issue20260807_ManifestSurvivesFailedGeneration(t *testing.T)
 // device anomaly at the filesystem level rather than only at validation.
 func TestRegression_Issue20260807_ReservedNameLeavesNoArtefact(t *testing.T) {
 	svc, w, _ := newFixture(t, fstest.MapFS{
-		"hexagonal/domain_only.go.tmpl": &fstest.MapFile{Data: []byte("package domain\n")},
+		"hexagonal/domain.go.tmpl": &fstest.MapFile{Data: []byte("package domain\n")},
 	})
 
 	if err := svc.MakeDomain(context.Background(), projectDir, "aux", false, false); err == nil {

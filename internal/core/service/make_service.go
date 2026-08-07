@@ -233,8 +233,11 @@ func (s *AetherScaffoldService) MakeDomain(ctx context.Context, startDir, module
 	projectRoot := filepath.Dir(manifestPath)
 	archPrefix := manifest.Architecture.Pattern
 
-	tmplName := fmt.Sprintf("%s/domain_only.go.tmpl", archPrefix)
-	content, err := s.engine.Render(ctx, tmplName, data)
+	// The canonical domain template, the same one arch:module uses. The former
+	// domain_only variant carried neither Validate nor the sentinel errors, so a
+	// slice assembled command by command failed to compile the moment the service
+	// and handler referenced them.
+	content, err := s.engine.Render(ctx, layerTemplate(archPrefix, "domain", manifest), data)
 	if err != nil {
 		return err
 	}
@@ -262,8 +265,10 @@ func (s *AetherScaffoldService) MakePort(ctx context.Context, startDir, moduleNa
 	projectRoot := filepath.Dir(manifestPath)
 	archPrefix := manifest.Architecture.Pattern
 
-	tmplName := fmt.Sprintf("%s/port_only.go.tmpl", archPrefix)
-	content, err := s.engine.Render(ctx, tmplName, data)
+	// The canonical port template. port_only declared the repository contract
+	// alone, so every service and handler generated afterwards referenced a
+	// port.XService that did not exist.
+	content, err := s.engine.Render(ctx, layerTemplate(archPrefix, "port", manifest), data)
 	if err != nil {
 		return err
 	}
@@ -291,8 +296,10 @@ func (s *AetherScaffoldService) MakeRepository(ctx context.Context, startDir, mo
 	projectRoot := filepath.Dir(manifestPath)
 	archPrefix := manifest.Architecture.Pattern
 
-	tmplName := fmt.Sprintf("%s/repository_only.go.tmpl", archPrefix)
-	content, err := s.engine.Render(ctx, tmplName, data)
+	// The canonical, driver-specific repository. repository_only produced an
+	// adapter with no connection at all, which compiled in isolation and then
+	// diverged from whatever arch:module had already generated.
+	content, err := s.engine.Render(ctx, layerTemplate(archPrefix, "repository", manifest), data)
 	if err != nil {
 		return err
 	}
