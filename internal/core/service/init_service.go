@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/huh"
@@ -29,59 +30,128 @@ func (s *AetherScaffoldService) InitProject(ctx context.Context, destDir, projec
 		return fmt.Errorf("%w: %s", domain.ErrFileConflict, manifestPath)
 	}
 
-	if !dryRun {
-		if err := s.resolver.Save(ctx, destDir, manifest, s.fs); err != nil {
-			return fmt.Errorf("failed writing initial manifest: %w", err)
-		}
+	if dryRun {
+		return nil
+	}
 
-		// Check if destDir exists on real OS to avoid breaking afero MemMapFs unit tests
-		if _, statErr := os.Stat(destDir); statErr == nil {
-			// Initialize go.mod automatically
-			cmdInit := exec.CommandContext(ctx, "go", "mod", "init", moduleName)
-			cmdInit.Dir = destDir
-			if out, err := cmdInit.CombinedOutput(); err != nil {
-				return fmt.Errorf("failed to run go mod init: %s (%w)", string(out), err)
-			}
+	if err := s.resolver.Save(ctx, destDir, manifest, s.fs); err != nil {
+		return fmt.Errorf("failed writing initial manifest: %w", err)
+	}
 
-			// Run go mod tidy just in case
-			cmdTidy := exec.CommandContext(ctx, "go", "mod", "tidy")
-			cmdTidy.Dir = destDir
-			if out, err := cmdTidy.CombinedOutput(); err != nil {
-				return fmt.Errorf("failed to run go mod tidy: %s (%w)", string(out), err)
-			}
+	// go.mod must exist before the skeleton is rendered, because the templates
+	// embed the module path in their import statements. Dependency resolution,
+	// however, must run *after* the files exist — see runModuleTidy below.
+	onRealDisk := false
+	if _, statErr := os.Stat(destDir); statErr == nil {
+		onRealDisk = true
+		if err := s.ensureGoModule(ctx, destDir, moduleName); err != nil {
+			return err
 		}
+	}
 
-		// Prepare template data
-		templateData := &domain.TemplateData{
-			ModuleName:      moduleName,
-			ModuleNameTitle: projectName,
-		}
+	templateData := &domain.TemplateData{
+		ModuleName:      moduleName,
+		ModuleNameTitle: projectName,
+		PackagePath:     moduleName,
+		GoVersion:       manifest.Project.GoVersion,
+		ArchPattern:     manifest.Architecture.Pattern,
+		Router:          manifest.Stack.Router,
+		DBDriver:        manifest.Stack.Database.Driver,
+		Paths:           manifest.Architecture.Paths,
+		Timestamp:       manifest.Project.CreatedAt,
+		AetherVersion:   manifest.Project.AetherVersion,
+	}
 
-		// Render the Executable Skeleton templates
-		filesToRender := map[string]string{
-			"common/main.go.tmpl":         "cmd/server/main.go",
-			"common/config_viper.go.tmpl": "pkg/config/config.go",
-			"common/postgres.go.tmpl":     "pkg/database/postgres.go",
-			"common/Makefile.tmpl":        "Makefile",
-			"common/Dockerfile.tmpl":      "Dockerfile",
-			"common/dockerignore.tmpl":    ".dockerignore",
-			"common/env_example.tmpl":     ".env.example",
+	// Rendered through a transaction so a failure midway leaves no half-written
+	// skeleton behind, matching the guarantee every other generator already gives.
+	tx := s.fs.BeginTransaction()
+	for _, spec := range skeletonFiles() {
+		outPath := filepath.Join(destDir, spec.dest)
+		content, err := s.engine.Render(ctx, spec.template, templateData)
+		if err != nil {
+			return fmt.Errorf("failed to render %s: %w", spec.dest, err)
 		}
+		if err := tx.WriteFile(ctx, outPath, content, false, false); err != nil {
+			return fmt.Errorf("failed to stage %s: %w", spec.dest, err)
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("skeleton generation failed, transaction rolled back: %w", err)
+	}
 
-		for tmplPath, relOutPath := range filesToRender {
-			outPath := filepath.Join(destDir, relOutPath)
-			content, err := s.engine.Render(ctx, tmplPath, templateData)
-			if err != nil {
-				return fmt.Errorf("failed to render %s: %w", outPath, err)
-			}
-			if err := s.fs.WriteFile(ctx, outPath, content, dryRun, false); err != nil {
-				return fmt.Errorf("failed to write %s: %w", outPath, err)
-			}
-		}
+	// Only now can `go mod tidy` see the imports it is supposed to resolve.
+	if onRealDisk {
+		s.runModuleTidy(ctx, destDir)
 	}
 
 	return nil
 }
+
+// skeletonSpec pairs an embedded template with its destination inside the new
+// project. A slice rather than a map because map iteration order is randomised,
+// and a generator that reports its failures in a different order on every run is
+// needlessly hard to debug.
+type skeletonSpec struct {
+	template string
+	dest     string
+}
+
+func skeletonFiles() []skeletonSpec {
+	return []skeletonSpec{
+		{"common/main.go.tmpl", filepath.Join("cmd", "server", "main.go")},
+		{"common/config_viper.go.tmpl", filepath.Join("pkg", "config", "config.go")},
+		{"common/postgres.go.tmpl", filepath.Join("pkg", "database", "postgres.go")},
+		{"common/Makefile.tmpl", "Makefile"},
+		{"common/Dockerfile.tmpl", "Dockerfile"},
+		{"common/dockerignore.tmpl", ".dockerignore"},
+		{"common/env_example.tmpl", ".env.example"},
+	}
+}
+
+// ensureGoModule creates go.mod unless the directory already is a module.
+// Re-running `go mod init` in an existing module is a hard error from the
+// toolchain, which would otherwise abort adoption of a directory that merely
+// happens to already be initialised.
+func (s *AetherScaffoldService) ensureGoModule(ctx context.Context, destDir, moduleName string) error {
+	if _, err := os.Stat(filepath.Join(destDir, "go.mod")); err == nil {
+		return nil
+	}
+
+	cmd := exec.CommandContext(ctx, "go", "mod", "init", moduleName)
+	cmd.Dir = destDir
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to run go mod init: %s (%w)", strings.TrimSpace(string(out)), err)
+	}
+	return nil
+}
+
+// runModuleTidy resolves the imports the freshly rendered skeleton introduced.
+//
+// Deliberately non-fatal: `go mod tidy` needs the network, and a developer
+// bootstrapping a project on a plane should still end up with a complete,
+// correct source tree. Failing hard here would delete a perfectly good scaffold
+// over a transient DNS error. The user is told exactly what to run instead.
+func (s *AetherScaffoldService) runModuleTidy(ctx context.Context, destDir string) {
+	tidyCtx, cancel := context.WithTimeout(ctx, moduleTidyTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(tidyCtx, "go", "mod", "tidy")
+	cmd.Dir = destDir
+	out, err := cmd.CombinedOutput()
+	if err == nil {
+		return
+	}
+
+	fmt.Fprintf(os.Stderr,
+		"\n⚠️  Could not resolve dependencies automatically (%v).\n"+
+			"   The generated source is complete and correct; only go.mod is missing entries.\n"+
+			"   Run this once you have network access:\n\n       cd %s && go mod tidy\n\n%s\n",
+		err, destDir, strings.TrimSpace(string(out)))
+}
+
+// moduleTidyTimeout bounds the only network-dependent step in the CLI so a
+// stalled proxy cannot hang `init` indefinitely.
+const moduleTidyTimeout = 120 * time.Second
 
 // AdoptProject scans an existing repository to construct an initial aether.yaml for brownfield adoption.
 func (s *AetherScaffoldService) AdoptProject(ctx context.Context, destDir string, scan, dryRun bool) error {
