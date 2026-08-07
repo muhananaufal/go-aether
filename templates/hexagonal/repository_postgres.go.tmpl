@@ -28,6 +28,15 @@ type {{ .ModuleNameTitle }}Repository struct {
 // The pool is injected rather than created here: connection lifecycle belongs to
 // main, and a repository that opens its own pool multiplies connections by the
 // number of repositories in the process.
+{{- if .ExistingDBVar }}
+//
+// Your project already builds a pool. Wire this from your entrypoint:
+//
+//	{{ .ModuleNamePkg }}Repo := repository.New{{ .ModuleNameTitle }}Repository({{ .ExistingDBVar }})
+//
+// Do not open a second pool: two pools against one database double the
+// connection count and the limit is reached under load, not in testing.
+{{- end }}
 func New{{ .ModuleNameTitle }}Repository(db *pgxpool.Pool) *{{ .ModuleNameTitle }}Repository {
 	return &{{ .ModuleNameTitle }}Repository{db: db}
 }
