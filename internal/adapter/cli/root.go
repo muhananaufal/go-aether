@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/muhananaufal/go-aether/internal/adapter/config"
+	"github.com/muhananaufal/go-aether/internal/core/domain"
 	"github.com/muhananaufal/go-aether/internal/core/port"
 	"github.com/spf13/cobra"
 )
@@ -168,5 +169,32 @@ Hexagonal / Ports & Adapters architectures, enforce zero runtime overhead, and e
 	rootCmd.AddCommand(newCmdTestIntegration(svc, &flags))
 	rootCmd.AddCommand(newCmdTestMutation(svc, &flags))
 	rootCmd.AddCommand(newCmdTestStress(svc, &flags))
+
+	annotateMaturity(rootCmd)
 	return rootCmd
+}
+
+// annotateMaturity stamps every subcommand with how much evidence stands behind
+// it, and appends the legend to the root help.
+//
+// Applied here rather than inside ninety constructors: the classification lives
+// in one table in the domain, and a command that nobody classified is labelled
+// experimental by default rather than silently passing as proven.
+func annotateMaturity(root *cobra.Command) {
+	for _, cmd := range root.Commands() {
+		tier := domain.TierOf(cmd.Name())
+
+		// Machine-readable, so tooling and the doctor report can group commands
+		// without parsing the description text.
+		if cmd.Annotations == nil {
+			cmd.Annotations = map[string]string{}
+		}
+		cmd.Annotations["aether.tier"] = tier.String()
+
+		if badge := tier.Badge(); badge != "" {
+			cmd.Short = cmd.Short + " " + badge
+		}
+	}
+
+	root.Long = root.Long + "\n\n" + domain.TierLegend()
 }
