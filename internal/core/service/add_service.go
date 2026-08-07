@@ -59,18 +59,30 @@ func (s *AetherScaffoldService) AddMiddleware(ctx context.Context, startDir, mod
 
 	newContent := strings.Replace(content, marker, marker+"\n"+injection, 1)
 
-	// Additionally, generate the middleware logic itself into pkg/middleware/
+	// The middleware itself is rendered before anything is staged. Previously the
+	// handler edit was staged unconditionally while this render sat behind
+	// `if err == nil`, so a template failure produced a handler calling
+	// middleware.RequireAuth() with no such package on disk — a project that no
+	// longer compiles, from a command that exited 0.
+	data, err := domain.NewTemplateData("middleware", manifest, nil, false, false)
+	if err != nil {
+		return err
+	}
+	mwContent, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return fmt.Errorf("cannot inject %q middleware, handler left untouched: %w", middlewareType, err)
+	}
+
 	tx := s.fs.BeginTransaction()
 
-	// Write the modified handler (always overwrite because it already exists)
-	tx.WriteFile(ctx, handlerFile, []byte(newContent), true, dryRun)
+	// Overwrite is intentional: the handler already exists by definition here.
+	if err := tx.WriteFile(ctx, handlerFile, []byte(newContent), true, dryRun); err != nil {
+		return err
+	}
 
-	// Write the middleware pkg file
-	data, _ := domain.NewTemplateData("middleware", manifest, nil, false, false)
-	mwContent, err := s.engine.Render(ctx, tmplName, data)
-	if err == nil {
-		mwDest := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "middleware", destPkgFile)
-		tx.WriteFile(ctx, mwDest, mwContent, force, dryRun)
+	mwDest := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "middleware", destPkgFile)
+	if err := tx.WriteFile(ctx, mwDest, mwContent, force, dryRun); err != nil {
+		return err
 	}
 
 	return tx.Commit(ctx)
@@ -85,18 +97,30 @@ func (s *AetherScaffoldService) AddCache(ctx context.Context, startDir, cacheTyp
 
 	manifest.Stack.Cache = cacheType
 
-	data, _ := domain.NewTemplateData("cache", manifest, nil, false, false)
-	tmplName := fmt.Sprintf("common/cache_%s.go.tmpl", cacheType)
-	content, err := s.engine.Render(ctx, tmplName, data)
-	if err == nil {
-		tx := s.fs.BeginTransaction()
-		destFile := filepath.Join(filepath.Dir(manifestPath), manifest.Architecture.Paths.Pkg, "cache", fmt.Sprintf("%s.go", cacheType))
-		tx.WriteFile(ctx, destFile, content, force, dryRun)
-		if err := tx.Commit(ctx); err != nil {
-			return err
-		}
+	data, err := domain.NewTemplateData("cache", manifest, nil, false, false)
+	if err != nil {
+		return err
 	}
 
+	// A render failure used to be swallowed by `if err == nil`, after which the
+	// manifest was persisted anyway and the CLI printed success. The project was
+	// left declaring a cache driver whose implementation exists nowhere on disk.
+	tmplName := fmt.Sprintf("common/cache_%s.go.tmpl", cacheType)
+	content, err := s.engine.Render(ctx, tmplName, data)
+	if err != nil {
+		return fmt.Errorf("unsupported cache driver %q: %w", cacheType, err)
+	}
+
+	tx := s.fs.BeginTransaction()
+	destFile := filepath.Join(filepath.Dir(manifestPath), manifest.Architecture.Paths.Pkg, "cache", fmt.Sprintf("%s.go", cacheType))
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return err
+	}
+
+	// The manifest is updated only once the implementation is actually on disk.
 	if !dryRun {
 		return s.resolver.Save(ctx, manifestPath, manifest, s.fs)
 	}
@@ -407,8 +431,12 @@ func (s *AetherScaffoldService) AddValidator(ctx context.Context, startDir, vali
 	projectRoot := filepath.Dir(manifestPath)
 	destFile := filepath.Join(projectRoot, manifest.Architecture.Paths.Pkg, "common", "validator.go")
 
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
-	tx.WriteFile(ctx, destFile, content, force, dryRun)
+	// Staged exactly once. Staging the same destination twice made the second
+	// write collide with the first at commit time, so the transaction always
+	// rolled back and the command could never succeed without --force.
+	if err := tx.WriteFile(ctx, destFile, content, force, dryRun); err != nil {
+		return err
+	}
 	return tx.Commit(ctx)
 }
 
