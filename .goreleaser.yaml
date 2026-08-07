@@ -7,7 +7,10 @@ project_name: go-aether
 before:
   hooks:
     - go mod tidy
-    - go test -v ./...
+    # The full suite, including the compile gate that builds generated projects
+    # with the real toolchain. A release that skips it is a release that has not
+    # verified the one promise this tool makes.
+    - go test ./...
 
 builds:
   - id: go-aether
@@ -15,6 +18,12 @@ builds:
     binary: go-aether
     env:
       - CGO_ENABLED=0
+    # Reproducibility. Without a fixed timestamp and -trimpath, two builds of the
+    # same commit differ, which makes the published checksums impossible for
+    # anyone to verify independently.
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    flags:
+      - -trimpath
     goos:
       - linux
       - windows
@@ -23,7 +32,9 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+      # CommitDate rather than Date: the build clock would change on every run
+      # and defeat the reproducibility above.
+      - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.CommitDate}}
 
 archives:
   - format: tar.gz
@@ -36,6 +47,12 @@ checksum:
   name_template: "checksums.txt"
   algorithm: sha256
 
+# A software bill of materials per archive, so downstream users can audit what
+# they are installing without unpacking and inspecting the binary themselves.
+# Requires syft on the runner; the release workflow installs it.
+sboms:
+  - artifacts: archive
+
 changelog:
   sort: asc
   filters:
@@ -43,6 +60,7 @@ changelog:
       - "^docs:"
       - "^test:"
       - "^chore:"
+      - "^style:"
       - "merge conflict"
       - Merge pull request
       - Merge branch
@@ -53,3 +71,12 @@ release:
     name: go-aether
   draft: false
   prerelease: false
+  footer: |
+    ---
+
+    Verify the download before running it:
+
+        sha256sum -c checksums.txt
+
+    Command maturity is printed by `go-aether --help`. Commands marked
+    `[experimental]` have no automated coverage yet.
