@@ -14,25 +14,42 @@ import (
 )
 
 func newCmdAdopt(svc port.ScaffoldService, globals *globalFlags) *cobra.Command {
-	var scan bool
+	var scan, apply bool
 
 	cmd := &cobra.Command{
 		Use:   "adopt",
 		Short: "Scan and adopt a legacy brownfield Go repository into go-aether",
+		Long: `Inspect an existing Go repository and propose an aether.yaml that matches
+the structure that is actually there.
+
+adopt previews by default and writes nothing. Review the proposed layer
+mapping, then re-run with --apply to save it.`,
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cwd, err := os.Getwd()
 			if err != nil {
 				return err
 			}
-			if err := svc.AdoptProject(cmd.Context(), cwd, scan, globals.DryRun); err != nil {
+
+			// Preview is the default. This command is pointed at repositories
+			// somebody already depends on, and a wrong path mapping sends every
+			// later generator into a directory that means something else. Writing
+			// only on an explicit --apply keeps the mistake recoverable.
+			dryRun := globals.DryRun || !apply
+
+			if err := svc.AdoptProject(cmd.Context(), cwd, scan, dryRun); err != nil {
 				return err
 			}
-			fmt.Println("🛡️ Successfully adopted existing repository under go-aether management!")
+
+			if !dryRun {
+				fmt.Println("\n🛡️ Repository is now under go-aether management.")
+			}
 			return nil
 		},
 	}
 
-	cmd.Flags().BoolVar(&scan, "scan", false, "perform interactive anomaly directory scanning")
+	cmd.Flags().BoolVar(&scan, "scan", true, "inspect the repository layout instead of assuming the default one")
+	cmd.Flags().BoolVar(&apply, "apply", false, "write aether.yaml; without this the plan is only printed")
 
 	return cmd
 }
