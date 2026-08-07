@@ -1,29 +1,49 @@
 # Stage 1: Build the Go binary
-FROM golang:1.22-alpine AS builder
+FROM golang:{{ .GoVersion }}-alpine AS builder
 
 WORKDIR /app
 
-# Download dependencies
-COPY go.mod go.sum ./
+# Dependencies are resolved in their own layer so source edits do not invalidate
+# the module cache on every rebuild.
+# go.sum is matched with a glob: a project generated offline may not have one
+# yet, and a literal COPY would fail the build before the first source file is
+# even read.
+COPY go.mod go.sum* ./
 RUN go mod download
 
-# Copy source code
 COPY . .
 
-# Build the binary with optimizations
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o server cmd/server/main.go
+# CGO is disabled so the result is a static binary that runs on a scratch image.
+# -trimpath keeps absolute build paths out of the binary, and -w -s drop DWARF
+# and the symbol table.
+RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-w -s" -o /out/server ./cmd/server
 
-# Stage 2: Create a minimal production image
-FROM alpine:3.19
+# Stage 2: Minimal runtime image
+FROM alpine:3.20
+
+# TLS roots are required for any outbound HTTPS call; without them every request
+# to a payment gateway or object store fails with a certificate error that looks
+# like a code bug. wget backs the HEALTHCHECK below.
+RUN apk add --no-cache ca-certificates wget \
+    && addgroup -S app \
+    && adduser -S -G app -H -s /sbin/nologin app
 
 WORKDIR /app
 
-# Copy the binary from the builder stage
-COPY --from=builder /app/server .
-COPY --from=builder /app/.env .
+COPY --from=builder /out/server /app/server
 
-# Expose the application port
+# Configuration arrives through the environment or a secret manager at run time.
+# The .env file is deliberately NOT copied: it belongs to local development, it
+# is excluded by .dockerignore, and baking secrets into an image layer makes them
+# readable by anyone who can pull the image.
+
+USER app
+
 EXPOSE 8080
 
-# Command to run the executable
-CMD ["./server"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --quiet --tries=1 --spider http://127.0.0.1:8080/health || exit 1
+
+# Exec form, so the process receives SIGTERM directly and graceful shutdown runs.
+# Shell form would make PID 1 a shell that never forwards the signal.
+ENTRYPOINT ["/app/server"]

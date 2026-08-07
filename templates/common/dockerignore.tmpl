@@ -1,9 +1,21 @@
-bin/
+# Secrets — never let these reach a build context or an image layer.
+.env
+.env.*
+!.env.example
+
+# Version control and agent workspaces
 .git/
+.github/
+.claude/
+
+# Editors
 .vscode/
 .idea/
-.env
-*.log
+*.swp
+
+# Build artifacts
+bin/
+dist/
 *.exe
 *.exe~
 *.dll
@@ -11,4 +23,17 @@ bin/
 *.dylib
 *.test
 *.out
+coverage.out
+
+# Dependencies vendored locally
 vendor/
+
+# Logs and scratch files
+*.log
+tmp/
+
+# Documentation and tests are not needed to build the binary and only enlarge
+# the build context.
+docs/
+*_test.go
+README.md
