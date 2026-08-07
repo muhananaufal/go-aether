@@ -6,6 +6,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -13,9 +15,35 @@ import (
 	"github.com/muhananaufal/go-aether/internal/core/domain"
 )
 
+// detectGoVersion reports the major.minor version of the toolchain running this
+// binary, e.g. "1.25".
+//
+// Hardcoding a version meant the manifest, the generated Dockerfile and the
+// go.mod written by `go mod init` could disagree with each other. A container
+// image pinned below the language version in go.mod fails to build, and the
+// error names a dependency rather than the toolchain, which sends the reader
+// looking in the wrong place.
+func detectGoVersion() string {
+	const fallback = "1.23"
+
+	raw := strings.TrimPrefix(runtime.Version(), "go")
+	parts := strings.Split(raw, ".")
+	if len(parts) < 2 {
+		return fallback
+	}
+	// Guard against development toolchains such as "devel go1.26-abc1234".
+	if _, err := strconv.Atoi(parts[0]); err != nil {
+		return fallback
+	}
+	if _, err := strconv.Atoi(parts[1]); err != nil {
+		return fallback
+	}
+	return parts[0] + "." + parts[1]
+}
+
 // InitProject bootstraps a new greenfield project architecture and saves the SSOT manifest.
 func (s *AetherScaffoldService) InitProject(ctx context.Context, destDir, projectName, moduleName, arch, dbDriver, router string, dryRun bool) error {
-	manifest := domain.NewDefaultManifest(projectName, moduleName, "1.23", arch, dbDriver, router)
+	manifest := domain.NewDefaultManifest(projectName, moduleName, detectGoVersion(), arch, dbDriver, router)
 
 	if err := manifest.Validate(); err != nil {
 		return fmt.Errorf("invalid default manifest parameters: %w", err)
